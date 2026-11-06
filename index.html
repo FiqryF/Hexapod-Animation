@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulasi Robot Hexapod 18 Servo 3D</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter & JetBrains Mono -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Three.js & OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-mono-code { font-family: 'JetBrains Mono', monospace; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+        ::-webkit-scrollbar-thumb { background: rgba(239, 68, 68, 0.5); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(239, 68, 68, 0.8); }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 h-screen w-screen overflow-hidden flex flex-col select-none">
+
+    <!-- TOP HEADER NAVBAR -->
+    <header class="bg-slate-900/90 border-b border-slate-800 px-4 py-2.5 flex items-center justify-between z-20 backdrop-blur-md">
+        <div class="flex items-center space-x-3">
+            <div class="w-9 h-9 rounded-lg bg-red-600/20 border border-red-500/40 flex items-center justify-center text-red-500 font-bold shadow-lg shadow-red-950/30">
+                <i class="fa-solid fa-spider text-lg"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-base tracking-wide text-white flex items-center gap-2">
+                    HEXAPOD 18-SERVO SIMULATOR
+                    <span class="text-[10px] bg-red-500/20 text-red-400 border border-red-500/30 px-2 py-0.5 rounded-full uppercase tracking-wider font-mono-code">v3.0 Terrain-IK Engine</span>
+                </h1>
+                <p class="text-xs text-slate-400">Kinematika Terbalik Real-time & Adaptasi Medan Rintangan</p>
+            </div>
+        </div>
+
+        <!-- QUICK STATUS & TOGGLES -->
+        <div class="flex items-center space-x-3">
+            <button id="autoWalkBtn" onclick="toggleAutoWalk()" class="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white font-medium text-xs flex items-center gap-2 transition-all shadow-lg shadow-red-600/30 active:scale-95">
+                <i id="autoWalkIcon" class="fa-solid fa-play"></i>
+                <span id="autoWalkText">AUTO JALAN MAJU</span>
+            </button>
+            <div class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700 text-xs text-slate-300">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>FPS: <strong id="fpsCounter" class="text-white font-mono-code">60</strong></span>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN VIEWPORT CONTAINER -->
+    <div class="relative flex-1 w-full h-full overflow-hidden">
+        
+        <!-- 3D CANVAS VIEWPORT -->
+        <div id="canvas-container" class="absolute inset-0 w-full h-full cursor-grab active:cursor-grabbing"></div>
+
+        <!-- CONTROLS OVERLAY (LEFT PANEL) -->
+        <div class="absolute top-4 left-4 z-10 w-80 max-h-[calc(100vh-6rem)] overflow-y-auto bg-slate-900/85 border border-slate-800/80 rounded-xl p-4 backdrop-blur-md shadow-2xl space-y-4">
+            
+            <!-- Terrain Obstacle Selector for IK Testing -->
+            <div>
+                <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2 flex items-center justify-between">
+                    <span><i class="fa-solid fa-mountain text-red-400 mr-1.5"></i> Uji Medan Rintangan (IK)</span>
+                    <span id="terrainBadge" class="text-[10px] text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">DATAR</span>
+                </label>
+                <div class="grid grid-cols-2 gap-1.5">
+                    <button onclick="setTerrainMode('flat')" id="terrainFlat" class="terrain-btn py-1.5 px-2.5 text-xs font-medium rounded-lg bg-red-600 text-white border border-red-500 transition-all flex items-center justify-center gap-1.5 shadow">
+                        Lantai Datar
+                    </button>
+                    <button onclick="setTerrainMode('blocks')" id="terrainBlocks" class="terrain-btn py-1.5 px-2.5 text-xs font-medium rounded-lg bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 transition-all flex items-center justify-center gap-1.5">
+                        Balok Step
+                    </button>
+                    <button onclick="setTerrainMode('boulders')" id="terrainBoulders" class="terrain-btn py-1.5 px-2.5 text-xs font-medium rounded-lg bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 transition-all flex items-center justify-center gap-1.5">
+                        Bebatuan
+                    </button>
+                    <button onclick="setTerrainMode('ramp')" id="terrainRamp" class="terrain-btn py-1.5 px-2.5 text-xs font-medium rounded-lg bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 transition-all flex items-center justify-center gap-1.5">
+                        Tanjakan Ramp
+                    </button>
+                </div>
+            </div>
+
+            <hr class="border-slate-800">
+
+            <!-- Gait Mode Selector -->
+            <div>
+                <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2 flex items-center justify-between">
+                    <span><i class="fa-solid fa-route text-red-400 mr-1.5"></i> Pola Langkah (Gait)</span>
+                    <span id="gaitBadge" class="text-[10px] text-red-400 bg-red-500/10 px-2 py-0.5 rounded border border-red-500/20">TRIPOD</span>
+                </label>
+                <div class="grid grid-cols-2 gap-1.5">
+                    <button onclick="setGaitMode('tripod')" id="gaitTripod" class="gait-btn py-1.5 px-2.5 text-xs font-medium rounded-lg bg-red-600 text-white border border-red-500 transition-all flex items-center justify-center gap-1.5 shadow">
+                        Tripod (Cepat)
+                    </button>
+                    <button onclick="setGaitMode('wave')" id="gaitWave" class="gait-btn py-1.5 px-2.5 text-xs font-medium rounded-lg bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 transition-all flex items-center justify-center gap-1.5">
+                        Wave (Presisi)
+                    </button>
+                    <button onclick="setGaitMode('ripple')" id="gaitRipple" class="gait-btn py-1.5 px-2.5 text-xs font-medium rounded-lg bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 transition-all flex items-center justify-center gap-1.5">
+                        Ripple (Stabil)
+                    </button>
+                    <button onclick="setGaitMode('dance')" id="gaitDance" class="gait-btn py-1.5 px-2.5 text-xs font-medium rounded-lg bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 transition-all flex items-center justify-center gap-1.5">
+                        Dance Mode
+                    </button>
+                </div>
+            </div>
+
+            <hr class="border-slate-800">
+
+            <!-- Body Pose Adjustment Sliders -->
+            <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                    <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                        <i class="fa-solid fa-arrows-up-down text-red-400 mr-1.5"></i> Posisi Bodi (Pose)
+                    </label>
+                    <button onclick="resetBodyPose()" class="text-[11px] text-slate-400 hover:text-white transition">Reset</button>
+                </div>
+
+                <!-- Height Slider -->
+                <div>
+                    <div class="flex justify-between text-xs mb-1">
+                        <span class="text-slate-300">Tinggi Body (Y)</span>
+                        <span id="valBodyY" class="text-red-400 font-mono-code">0.0 cm</span>
+                    </div>
+                    <input type="range" id="sliderBodyY" min="-0.8" max="0.8" step="0.05" value="0" oninput="updateBodyPose()" class="w-full accent-red-500 bg-slate-800 h-1.5 rounded-lg appearance-none cursor-pointer">
+                </div>
+
+                <!-- Pitch Slider -->
+                <div>
+                    <div class="flex justify-between text-xs mb-1">
+                        <span class="text-slate-300">Kemiringan Pitch (Depan/Belakang)</span>
+                        <span id="valBodyPitch" class="text-red-400 font-mono-code">0°</span>
+                    </div>
+                    <input type="range" id="sliderBodyPitch" min="-0.25" max="0.25" step="0.01" value="0" oninput="updateBodyPose()" class="w-full accent-red-500 bg-slate-800 h-1.5 rounded-lg appearance-none cursor-pointer">
+                </div>
+
+                <!-- Roll Slider -->
+                <div>
+                    <div class="flex justify-between text-xs mb-1">
+                        <span class="text-slate-300">Kemiringan Roll (Kiri/Kanan)</span>
+                        <span id="valBodyRoll" class="text-red-400 font-mono-code">0°</span>
+                    </div>
+                    <input type="range" id="sliderBodyRoll" min="-0.25" max="0.25" step="0.01" value="0" oninput="updateBodyPose()" class="w-full accent-red-500 bg-slate-800 h-1.5 rounded-lg appearance-none cursor-pointer">
+                </div>
+            </div>
+
+            <hr class="border-slate-800">
+
+            <!-- Gait Parameters -->
+            <div class="space-y-3">
+                <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
+                    <i class="fa-solid fa-sliders text-red-400 mr-1.5"></i> Parameter Langkah
+                </label>
+
+                <!-- Speed -->
+                <div>
+                    <div class="flex justify-between text-xs mb-1">
+                        <span class="text-slate-300">Kecepatan Langkah</span>
+                        <span id="valSpeed" class="text-red-400 font-mono-code">1.0x</span>
+                    </div>
+                    <input type="range" id="sliderSpeed" min="0.3" max="2.5" step="0.1" value="1.0" class="w-full accent-red-500 bg-slate-800 h-1.5 rounded-lg appearance-none cursor-pointer">
+                </div>
+
+                <!-- Step Height -->
+                <div>
+                    <div class="flex justify-between text-xs mb-1">
+                        <span class="text-slate-300">Tinggi Angkatan Kaki</span>
+                        <span id="valStepHeight" class="text-red-400 font-mono-code">0.9 cm</span>
+                    </div>
+                    <input type="range" id="sliderStepHeight" min="0.4" max="1.8" step="0.1" value="0.9" class="w-full accent-red-500 bg-slate-800 h-1.5 rounded-lg appearance-none cursor-pointer">
+                </div>
+            </div>
+
+            <!-- Keyboard Instructions -->
+            <div class="bg-slate-950/60 rounded-lg p-3 border border-slate-800 text-[11px] text-slate-400 space-y-1">
+                <div class="font-semibold text-slate-300 mb-1 flex items-center gap-1.5">
+                    <i class="fa-solid fa-keyboard text-red-400"></i> Kontrol Keyboard:
+                </div>
+                <div class="grid grid-cols-2 gap-1 text-[10px]">
+                    <div><span class="px-1.5 py-0.5 bg-slate-800 border border-slate-700 rounded text-slate-200">W/S</span> : Maju / Mundur</div>
+                    <div><span class="px-1.5 py-0.5 bg-slate-800 border border-slate-700 rounded text-slate-200">A/D</span> : Geser Kiri / Kanan</div>
+                    <div><span class="px-1.5 py-0.5 bg-slate-800 border border-slate-700 rounded text-slate-200">Q/E</span> : Rotasi Belok</div>
+                    <div><span class="px-1.5 py-0.5 bg-slate-800 border border-slate-700 rounded text-slate-200">SPACE</span> : Toggle Auto</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 18 SERVO TELEMETRY (RIGHT PANEL) -->
+        <div class="absolute top-4 right-4 z-10 w-80 max-h-[calc(100vh-6rem)] overflow-y-auto bg-slate-900/85 border border-slate-800/80 rounded-xl p-4 backdrop-blur-md shadow-2xl space-y-3">
+            <div class="flex items-center justify-between">
+                <h3 class="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <i class="fa-solid fa-microchip text-red-400"></i> Telemetri 18 Servo
+                </h3>
+                <span class="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 font-mono-code">ONLINE</span>
+            </div>
+
+            <!-- 6 Legs Servo Grids -->
+            <div id="telemetryGrid" class="space-y-2 text-xs">
+                <!-- Dynamically Generated via JS -->
+            </div>
+        </div>
+
+        <!-- VIRTUAL REMOTE CONTROLLER D-PAD (BOTTOM CENTER) -->
+        <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 bg-slate-900/90 border border-slate-800 rounded-2xl p-3 backdrop-blur-md shadow-2xl flex items-center gap-4 select-none">
+            <!-- Steering D-Pad -->
+            <div class="grid grid-cols-3 gap-1.5 w-36 h-36 p-1 bg-slate-950/80 rounded-xl border border-slate-800">
+                <div></div>
+                <button onmousedown="padPress('w')" onmouseup="padRelease('w')" ontouchstart="padPress('w')" ontouchend="padRelease('w')" class="btn-pad flex items-center justify-center bg-slate-800 hover:bg-red-600 active:bg-red-500 text-white rounded-lg transition text-sm font-bold shadow">
+                    <i class="fa-solid fa-chevron-up"></i>
+                </button>
+                <div></div>
+
+                <button onmousedown="padPress('a')" onmouseup="padRelease('a')" ontouchstart="padPress('a')" ontouchend="padRelease('a')" class="btn-pad flex items-center justify-center bg-slate-800 hover:bg-red-600 active:bg-red-500 text-white rounded-lg transition text-sm font-bold shadow">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
+                <div class="flex items-center justify-center text-slate-600 text-[10px] font-mono-code font-bold">MOVE</div>
+                <button onmousedown="padPress('d')" onmouseup="padRelease('d')" ontouchstart="padPress('d')" ontouchend="padRelease('d')" class="btn-pad flex items-center justify-center bg-slate-800 hover:bg-red-600 active:bg-red-500 text-white rounded-lg transition text-sm font-bold shadow">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+
+                <div></div>
+                <button onmousedown="padPress('s')" onmouseup="padRelease('s')" ontouchstart="padPress('s')" ontouchend="padRelease('s')" class="btn-pad flex items-center justify-center bg-slate-800 hover:bg-red-600 active:bg-red-500 text-white rounded-lg transition text-sm font-bold shadow">
+                    <i class="fa-solid fa-chevron-down"></i>
+                </button>
+                <div></div>
+            </div>
+
+            <!-- Rotation Controls -->
+            <div class="flex flex-col gap-2">
+                <div class="text-[10px] text-slate-400 font-semibold uppercase text-center tracking-wider">Rotasi Belok</div>
+                <div class="flex gap-2">
+                    <button onmousedown="padPress('q')" onmouseup="padRelease('q')" ontouchstart="padPress('q')" ontouchend="padRelease('q')" class="w-12 h-12 bg-slate-800 hover:bg-red-600 active:bg-red-500 text-white rounded-xl flex items-center justify-center text-sm font-bold shadow border border-slate-700">
+                        <i class="fa-solid fa-rotate-left"></i>
+                    </button>
+                    <button onmousedown="padPress('e')" onmouseup="padRelease('e')" ontouchstart="padPress('e')" ontouchend="padRelease('e')" class="w-12 h-12 bg-slate-800 hover:bg-red-600 active:bg-red-500 text-white rounded-xl flex items-center justify-center text-sm font-bold shadow border border-slate-700">
+                        <i class="fa-solid fa-rotate-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- THREE.JS SIMULATION SCRIPT -->
+    <script>
+        // --- GLOBALS & SCENE SETUP ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x090d16);
+        scene.fog = new THREE.FogExp2(0x090d16, 0.03);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+        camera.position.set(7, 5, 9);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 - 0.02;
+        controls.minDistance = 3;
+        controls.maxDistance = 25;
+        controls.target.set(0, 0, 0);
+
+        // --- LIGHTING ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+        dirLight.position.set(8, 12, 6);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 2048;
+        dirLight.shadow.mapSize.height = 2048;
+        scene.add(dirLight);
+
+        // --- FLOOR GRID ---
+        const FLOOR_Y = -1.8;
+        const gridHelper = new THREE.GridHelper(60, 60, 0xef4444, 0x1e293b);
+        gridHelper.position.y = FLOOR_Y;
+        scene.add(gridHelper);
+
+        const planeGeo = new THREE.PlaneGeometry(80, 80);
+        const planeMat = new THREE.MeshStandardMaterial({ color: 0x090d16, roughness: 0.9, metalness: 0.1 });
+        const floorMesh = new THREE.Mesh(planeGeo, planeMat);
+        floorMesh.rotation.x = -Math.PI / 2;
+        floorMesh.position.y = FLOOR_Y - 0.005;
+        floorMesh.receiveShadow = true;
+        scene.add(floorMesh);
+
+        // --- OBSTACLES & TERRAIN SYSTEM FOR IK TESTING ---
+        const obstacleGroup = new THREE.Group();
+        scene.add(obstacleGroup);
+
+        let obstacleMeshes = [floorMesh];
+        const raycaster = new THREE.Raycaster();
+
+        function buildObstacles(type) {
+            // Clear existing obstacles
+            while(obstacleGroup.children.length > 0) {
+                const child = obstacleGroup.children[0];
+                obstacleGroup.remove(child);
+            }
+            obstacleMeshes = [floorMesh];
+
+            const blockMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.5, metalness: 0.2 });
+            const rockMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.8, metalness: 0.1 });
+            const rampMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.6, metalness: 0.3 });
+
+            if (type === 'blocks') {
+                // Generate step blocks along walk path
+                for (let z = 2; z < 18; z += 3) {
+                    for (let x = -2.5; x <= 2.5; x += 2.5) {
+                        const h = 0.2 + Math.random() * 0.4;
+                        const w = 1.6 + Math.random() * 0.4;
+                        const d = 1.6 + Math.random() * 0.4;
+                        const block = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), blockMat);
+                        block.position.set(x + (Math.random()-0.5)*0.5, FLOOR_Y + h / 2, z + (Math.random()-0.5)*0.5);
+                        block.castShadow = true;
+                        block.receiveShadow = true;
+                        obstacleGroup.add(block);
+                        obstacleMeshes.push(block);
+                    }
+                }
+            } else if (type === 'boulders') {
+                // Scatter boulders
+                for (let i = 0; i < 24; i++) {
+                    const r = 0.3 + Math.random() * 0.5;
+                    const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(r, 1), rockMat);
+                    const x = (Math.random() - 0.5) * 8;
+                    const z = 2 + Math.random() * 16;
+                    rock.position.set(x, FLOOR_Y + r * 0.6, z);
+                    rock.rotation.set(Math.random(), Math.random(), Math.random());
+                    rock.castShadow = true;
+                    rock.receiveShadow = true;
+                    obstacleGroup.add(rock);
+                    obstacleMeshes.push(rock);
+                }
+            } else if (type === 'ramp') {
+                // Slope Ramp
+                const rampWidth = 6, rampLength = 8, rampHeight = 1.2;
+                const rampGeo = new THREE.BoxGeometry(rampWidth, 0.2, rampLength);
+                const ramp = new THREE.Mesh(rampGeo, rampMat);
+                const angle = Math.atan2(rampHeight, rampLength);
+                ramp.rotation.x = -angle;
+                ramp.position.set(0, FLOOR_Y + rampHeight / 2, rampLength / 2 + 2);
+                ramp.castShadow = true;
+                ramp.receiveShadow = true;
+                obstacleGroup.add(ramp);
+                obstacleMeshes.push(ramp);
+
+                // Elevated Platform at top of ramp
+                const platform = new THREE.Mesh(new THREE.BoxGeometry(rampWidth, 0.2, 6), rampMat);
+                platform.position.set(0, FLOOR_Y + rampHeight, rampLength + 4);
+                platform.castShadow = true;
+                platform.receiveShadow = true;
+                obstacleGroup.add(platform);
+                obstacleMeshes.push(platform);
+            }
+        }
+
+        function getGroundHeight(worldX, worldZ) {
+            const origin = new THREE.Vector3(worldX, 10, worldZ);
+            const direction = new THREE.Vector3(0, -1, 0);
+            raycaster.set(origin, direction);
+
+            const intersects = raycaster.intersectObjects(obstacleMeshes, false);
+            if (intersects.length > 0) {
+                return intersects[0].point.y;
+            }
+            return FLOOR_Y;
+        }
+
+        function setTerrainMode(type) {
+            buildObstacles(type);
+            document.querySelectorAll('.terrain-btn').forEach(btn => {
+                btn.className = 'terrain-btn py-1.5 px-2.5 text-xs font-medium rounded-lg bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 transition-all flex items-center justify-center gap-1.5';
+            });
+            const activeBtn = document.getElementById('terrain' + type.charAt(0).toUpperCase() + type.slice(1));
+            if (activeBtn) {
+                activeBtn.className = 'terrain-btn py-1.5 px-2.5 text-xs font-medium rounded-lg bg-red-600 text-white border border-red-500 transition-all flex items-center justify-center gap-1.5 shadow';
+            }
+            document.getElementById('terrainBadge').innerText = type.toUpperCase();
+        }
+
+        // --- HEXAPOD DIMENSIONS & CONSTANTS ---
+        const NUM_LEGS = 6;
+        const LEG_ANGLES = [
+            Math.PI / 4,       // Leg 0: Right Front
+            0,                 // Leg 1: Right Middle
+            -Math.PI / 4,      // Leg 2: Right Rear
+            -3 * Math.PI / 4,  // Leg 3: Left Rear
+            Math.PI,           // Leg 4: Left Middle
+            3 * Math.PI / 4    // Leg 5: Left Front
+        ];
+
+        const L_COXA = 0.8;   // Hip length
+        const L_FEMUR = 1.5;  // Thigh length
+        const L_TIBIA = 2.2;  // Shin length
+
+        const NEUTRAL_FOOT_R = 3.8; // Radial offset from body center
+
+        // --- MATERIALS MATCHING REFERENCE PHOTO ---
+        const orangePlateMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.4, metalness: 0.1 });
+        const blackFrameMat  = new THREE.MeshStandardMaterial({ color: 0x1c1917, roughness: 0.5, metalness: 0.2 });
+        const servoBodyMat   = new THREE.MeshStandardMaterial({ color: 0x27272a, roughness: 0.3, metalness: 0.3 });
+        const servoHornMat   = new THREE.MeshStandardMaterial({ color: 0xd4d4d8, roughness: 0.2, metalness: 0.8 });
+        const batteryMat     = new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.3, metalness: 0.2 });
+        const strapMat       = new THREE.MeshStandardMaterial({ color: 0xeab308, roughness: 0.7, metalness: 0.1 });
+        const ledGreenMat    = new THREE.MeshBasicMaterial({ color: 0x22c55e });
+        const ledRedMat      = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+
+        // --- BUILD ROBOT 3D MODEL ---
+        const hexapodGroup = new THREE.Group();
+        scene.add(hexapodGroup);
+
+        const robotBodyGroup = new THREE.Group();
+        hexapodGroup.add(robotBodyGroup);
+
+        function createServoMesh() {
+            const group = new THREE.Group();
+            const body = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.40, 0.32), servoBodyMat);
+            body.castShadow = true;
+            group.add(body);
+
+            const tabs = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.05, 0.46), servoBodyMat);
+            tabs.position.y = 0.05;
+            group.add(tabs);
+
+            const horn = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.04, 12), servoHornMat);
+            horn.rotation.x = Math.PI / 2;
+            horn.position.set(0, 0, 0.17);
+            group.add(horn);
+
+            return group;
+        }
+
+        function createChassis() {
+            const bodyShape = new THREE.Shape();
+            const rx = 1.6, rz = 2.0;
+            for (let i = 0; i < 8; i++) {
+                const a = (i * Math.PI / 4) + Math.PI / 8;
+                const x = rx * Math.cos(a);
+                const z = rz * Math.sin(a);
+                if (i === 0) bodyShape.moveTo(x, z);
+                else bodyShape.lineTo(x, z);
+            }
+            bodyShape.closePath();
+
+            const extrudeSettings = { depth: 0.08, bevelEnabled: true, bevelSegments: 2, steps: 1, bevelSize: 0.04, bevelThickness: 0.04 };
+            const plateGeo = new THREE.ExtrudeGeometry(bodyShape, extrudeSettings);
+            plateGeo.rotateX(Math.PI / 2);
+
+            const topPlate = new THREE.Mesh(plateGeo, orangePlateMat);
+            topPlate.position.y = 0.25;
+            topPlate.castShadow = true;
+            topPlate.receiveShadow = true;
+            robotBodyGroup.add(topPlate);
+
+            const bottomPlate = new THREE.Mesh(plateGeo, orangePlateMat);
+            bottomPlate.position.y = -0.25;
+            bottomPlate.castShadow = true;
+            bottomPlate.receiveShadow = true;
+            robotBodyGroup.add(bottomPlate);
+
+            const centerBox = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.42, 2.2), blackFrameMat);
+            centerBox.castShadow = true;
+            robotBodyGroup.add(centerBox);
+
+            const ledRed = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), ledRedMat);
+            ledRed.position.set(-0.15, 0.0, 1.12);
+            robotBodyGroup.add(ledRed);
+
+            const ledGreen = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), ledGreenMat);
+            ledGreen.position.set(0.15, 0.0, 1.12);
+            robotBodyGroup.add(ledGreen);
+
+            const battery = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.3, 1.3), batteryMat);
+            battery.position.set(0, 0.44, -0.1);
+            battery.castShadow = true;
+            robotBodyGroup.add(battery);
+
+            const strap = new THREE.Mesh(new THREE.BoxGeometry(0.84, 0.08, 0.3), strapMat);
+            strap.position.set(0, 0.58, -0.1);
+            robotBodyGroup.add(strap);
+        }
+
+        createChassis();
+
+        // Build 6 Legs with 3 Servos Per Leg
+        const legs = [];
+
+        function createLegs() {
+            const hipRadius = 1.6;
+
+            for (let i = 0; i < NUM_LEGS; i++) {
+                const angle = LEG_ANGLES[i];
+                const hipX = Math.cos(angle) * hipRadius;
+                const hipZ = Math.sin(angle) * hipRadius;
+
+                // Root Hip Mount
+                const hipGroup = new THREE.Group();
+                hipGroup.position.set(hipX, 0, hipZ);
+                hipGroup.rotation.y = -angle;
+                robotBodyGroup.add(hipGroup);
+
+                // Servo 1: Coxa Joint (Yaw)
+                const coxaGroup = new THREE.Group();
+                hipGroup.add(coxaGroup);
+
+                const coxaBracket = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.50, 0.42), blackFrameMat);
+                coxaBracket.castShadow = true;
+                coxaGroup.add(coxaBracket);
+
+                const coxaServo = createServoMesh();
+                coxaGroup.add(coxaServo);
+
+                const coxaLink = new THREE.Mesh(new THREE.BoxGeometry(L_COXA, 0.22, 0.32), blackFrameMat);
+                coxaLink.position.set(L_COXA / 2, 0, 0);
+                coxaLink.castShadow = true;
+                coxaGroup.add(coxaLink);
+
+                // Servo 2: Femur Joint (Pitch)
+                const femurGroup = new THREE.Group();
+                femurGroup.position.set(L_COXA, 0, 0);
+                coxaGroup.add(femurGroup);
+
+                const femurServo = createServoMesh();
+                femurServo.position.set(0, 0, 0);
+                femurGroup.add(femurServo);
+
+                // Black Dual-Truss Femur Arm Plates
+                const femurTopBar = new THREE.Mesh(new THREE.BoxGeometry(L_FEMUR, 0.08, 0.24), blackFrameMat);
+                femurTopBar.position.set(L_FEMUR / 2, 0.14, 0);
+                femurTopBar.castShadow = true;
+                femurGroup.add(femurTopBar);
+
+                const femurBottomBar = new THREE.Mesh(new THREE.BoxGeometry(L_FEMUR, 0.08, 0.24), blackFrameMat);
+                femurBottomBar.position.set(L_FEMUR / 2, -0.14, 0);
+                femurBottomBar.castShadow = true;
+                femurGroup.add(femurBottomBar);
+
+                // Servo 3: Tibia Joint (Knee Pitch)
+                const tibiaGroup = new THREE.Group();
+                tibiaGroup.position.set(L_FEMUR, 0, 0);
+                femurGroup.add(tibiaGroup);
+
+                const tibiaServo = createServoMesh();
+                tibiaServo.position.set(0, 0, 0);
+                tibiaGroup.add(tibiaServo);
+
+                // Orange Curved Tibia Blade (Spanning Knee x=0 to Foot Tip x=L_TIBIA)
+                const shinShape = new THREE.Shape();
+                shinShape.moveTo(0, 0.08);
+                shinShape.lineTo(L_TIBIA * 0.3, 0.16);
+                shinShape.lineTo(L_TIBIA * 0.7, 0.10);
+                shinShape.lineTo(L_TIBIA, 0.0);
+                shinShape.lineTo(L_TIBIA * 0.75, -0.12);
+                shinShape.lineTo(L_TIBIA * 0.25, -0.10);
+                shinShape.lineTo(0, -0.08);
+                shinShape.closePath();
+
+                const shinExtrude = { depth: 0.10, bevelEnabled: true, bevelSegments: 2, steps: 1, bevelSize: 0.02, bevelThickness: 0.02 };
+                const shinGeo = new THREE.ExtrudeGeometry(shinShape, shinExtrude);
+                shinGeo.translate(0, 0, -0.05);
+
+                const tibiaShin = new THREE.Mesh(shinGeo, orangePlateMat);
+                tibiaShin.castShadow = true;
+                tibiaShin.receiveShadow = true;
+                tibiaGroup.add(tibiaShin);
+
+                const footTip = new THREE.Mesh(new THREE.SphereGeometry(0.09, 12, 12), orangePlateMat);
+                footTip.position.set(L_TIBIA, 0, 0);
+                tibiaGroup.add(footTip);
+
+                // Neutral Local Target Point
+                const homePosLocal = new THREE.Vector3(
+                    hipX + Math.cos(angle) * (NEUTRAL_FOOT_R - hipRadius),
+                    FLOOR_Y,
+                    hipZ + Math.sin(angle) * (NEUTRAL_FOOT_R - hipRadius)
+                );
+
+                const initWorldFootPos = homePosLocal.clone();
+
+                legs.push({
+                    index: i,
+                    angleOffset: angle,
+                    hipGroup: hipGroup,
+                    coxaGroup: coxaGroup,
+                    femurGroup: femurGroup,
+                    tibiaGroup: tibiaGroup,
+                    footTip: footTip,
+                    homeFootPos: homePosLocal.clone(),
+                    currentWorldFootPos: initWorldFootPos.clone(),
+                    liftOffWorldPos: initWorldFootPos.clone(),
+                    landTargetWorldPos: initWorldFootPos.clone(),
+                    isStance: true,
+                    angles: { coxa: 0, femur: 0, tibia: 0 }
+                });
+            }
+        }
+
+        createLegs();
+
+        // --- INVERSE KINEMATICS (IK) SOLVER ---
+        const servoAngles = new Float32Array(18);
+
+        function solveIK(leg, targetWorldPos) {
+            const localTarget = targetWorldPos.clone();
+            leg.hipGroup.worldToLocal(localTarget);
+
+            // 1. Coxa Angle (Hip Yaw)
+            const coxaAngle = Math.atan2(localTarget.z, localTarget.x);
+
+            // 2. Projected XZ distance in Coxa plane
+            const targetDistXZ = Math.sqrt(localTarget.x * localTarget.x + localTarget.z * localTarget.z);
+            const r = targetDistXZ - L_COXA;
+            const y = localTarget.y;
+
+            const D = Math.sqrt(r * r + y * y);
+            const maxReach = (L_FEMUR + L_TIBIA) * 0.98;
+            const clampedD = Math.max(0.2, Math.min(D, maxReach));
+
+            // 3. Femur & Tibia Angles (Spider Knee-Up Configuration)
+            const alpha = Math.atan2(y, Math.max(0.001, r));
+
+            const cosBeta = Math.max(-0.999, Math.min(0.999, (L_FEMUR * L_FEMUR + clampedD * clampedD - L_TIBIA * L_TIBIA) / (2 * L_FEMUR * clampedD)));
+            const beta = Math.acos(cosBeta);
+            const femurAngle = alpha + beta; // Points Femur upward/outward
+
+            const cosGamma = Math.max(-0.999, Math.min(0.999, (L_FEMUR * L_FEMUR + L_TIBIA * L_TIBIA - clampedD * clampedD) / (2 * L_FEMUR * L_TIBIA)));
+            const gamma = Math.acos(cosGamma);
+            const tibiaAngle = -(Math.PI - gamma); // Points Tibia downward to ground
+
+            // Apply smooth low-pass filter dampening to joint rotations for organic servo motion
+            leg.coxaGroup.rotation.y += (coxaAngle - leg.coxaGroup.rotation.y) * 0.45;
+            leg.femurGroup.rotation.z += (femurAngle - leg.femurGroup.rotation.z) * 0.45;
+            leg.tibiaGroup.rotation.z += (tibiaAngle - leg.tibiaGroup.rotation.z) * 0.45;
+
+            const legIdx = leg.index;
+            servoAngles[legIdx * 3 + 0] = THREE.MathUtils.radToDeg(leg.coxaGroup.rotation.y);
+            servoAngles[legIdx * 3 + 1] = THREE.MathUtils.radToDeg(leg.femurGroup.rotation.z);
+            servoAngles[legIdx * 3 + 2] = THREE.MathUtils.radToDeg(leg.tibiaGroup.rotation.z);
+
+            leg.angles = {
+                coxa: servoAngles[legIdx * 3 + 0],
+                femur: servoAngles[legIdx * 3 + 1],
+                tibia: servoAngles[legIdx * 3 + 2]
+            };
+        }
+
+        // --- GAIT ENGINE & MOTION CONTROLLER ---
+        let gaitMode = 'tripod';
+        let autoWalk = false;
+        let gaitPhase = 0;
+
+        const targetVel = { x: 0, z: 0, turn: 0 };
+        const currentVel = { x: 0, z: 0, turn: 0 };
+
+        const bodyPoseTarget = { y: 0, pitch: 0, roll: 0 };
+        const bodyPoseCurrent = { y: 0, pitch: 0, roll: 0 };
+
+        const keys = {};
+        window.addEventListener('keydown', (e) => {
+            keys[e.key.toLowerCase()] = true;
+            if (e.code === 'Space') {
+                e.preventDefault();
+                toggleAutoWalk();
+            }
+        });
+        window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
+
+        // Virtual D-Pad Event Handlers
+        function padPress(key) { keys[key] = true; }
+        function padRelease(key) { keys[key] = false; }
+
+        function setGaitMode(mode) {
+            gaitMode = mode;
+            document.querySelectorAll('.gait-btn').forEach(btn => {
+                btn.className = 'gait-btn py-1.5 px-2.5 text-xs font-medium rounded-lg bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 transition-all flex items-center justify-center gap-1.5';
+            });
+            const activeBtn = document.getElementById('gait' + mode.charAt(0).toUpperCase() + mode.slice(1));
+            if (activeBtn) {
+                activeBtn.className = 'gait-btn py-1.5 px-2.5 text-xs font-medium rounded-lg bg-red-600 text-white border border-red-500 transition-all flex items-center justify-center gap-1.5 shadow';
+            }
+            document.getElementById('gaitBadge').innerText = mode.toUpperCase();
+        }
+
+        function toggleAutoWalk() {
+            autoWalk = !autoWalk;
+            const btn = document.getElementById('autoWalkBtn');
+            const icon = document.getElementById('autoWalkIcon');
+            const text = document.getElementById('autoWalkText');
+
+            if (autoWalk) {
+                btn.className = 'px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-2 transition-all shadow-lg shadow-amber-500/30 active:scale-95';
+                icon.className = 'fa-solid fa-pause';
+                text.innerText = 'BERHENTI JALAN';
+            } else {
+                btn.className = 'px-4 py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white font-medium text-xs flex items-center gap-2 transition-all shadow-lg shadow-red-600/30 active:scale-95';
+                icon.className = 'fa-solid fa-play';
+                text.innerText = 'AUTO JALAN MAJU';
+            }
+        }
+
+        function updateBodyPose() {
+            bodyPoseTarget.y = parseFloat(document.getElementById('sliderBodyY').value);
+            bodyPoseTarget.pitch = parseFloat(document.getElementById('sliderBodyPitch').value);
+            bodyPoseTarget.roll = parseFloat(document.getElementById('sliderBodyRoll').value);
+
+            document.getElementById('valBodyY').innerText = (bodyPoseTarget.y * 10).toFixed(1) + ' cm';
+            document.getElementById('valBodyPitch').innerText = THREE.MathUtils.radToDeg(bodyPoseTarget.pitch).toFixed(0) + '°';
+            document.getElementById('valBodyRoll').innerText = THREE.MathUtils.radToDeg(bodyPoseTarget.roll).toFixed(0) + '°';
+        }
+
+        function resetBodyPose() {
+            document.getElementById('sliderBodyY').value = 0;
+            document.getElementById('sliderBodyPitch').value = 0;
+            document.getElementById('sliderBodyRoll').value = 0;
+            updateBodyPose();
+        }
+
+        function getLegGaitPhase(legIdx) {
+            if (gaitMode === 'tripod') {
+                return (legIdx % 2 === 0) ? 0 : 0.5;
+            } else if (gaitMode === 'wave') {
+                return (legIdx / 6);
+            } else if (gaitMode === 'ripple') {
+                const offsets = [0, 0.33, 0.66, 0.33, 0.66, 0];
+                return offsets[legIdx];
+            } else {
+                return (legIdx % 2 === 0) ? 0 : 0.5;
+            }
+        }
+
+        function initTelemetryUI() {
+            const container = document.getElementById('telemetryGrid');
+            container.innerHTML = '';
+
+            const legNames = ["Depan Kanan", "Tengah Kanan", "Belakang Kanan", "Belakang Kiri", "Tengah Kiri", "Depan Kiri"];
+
+            for (let i = 0; i < NUM_LEGS; i++) {
+                const legDiv = document.createElement('div');
+                legDiv.className = 'bg-slate-950/70 p-2 rounded-lg border border-slate-800/80';
+                legDiv.innerHTML = `
+                    <div class="flex items-center justify-between text-[11px] font-semibold text-slate-300 mb-1">
+                        <span>Leg ${i + 1} (${legNames[i]})</span>
+                        <span id="legState-${i}" class="text-[9px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400">STANCE</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-1 font-mono-code text-[10px] text-center">
+                        <div class="bg-slate-900 p-1 rounded border border-slate-800/50">
+                            <span class="text-slate-500 block text-[8px]">COXA</span>
+                            <span id="servo-${i}-0" class="text-red-400 font-bold">0°</span>
+                        </div>
+                        <div class="bg-slate-900 p-1 rounded border border-slate-800/50">
+                            <span class="text-slate-500 block text-[8px]">FEMUR</span>
+                            <span id="servo-${i}-1" class="text-amber-400 font-bold">0°</span>
+                        </div>
+                        <div class="bg-slate-900 p-1 rounded border border-slate-800/50">
+                            <span class="text-slate-500 block text-[8px]">TIBIA</span>
+                            <span id="servo-${i}-2" class="text-emerald-400 font-bold">0°</span>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(legDiv);
+            }
+        }
+
+        initTelemetryUI();
+
+        function updateTelemetryUI() {
+            for (let i = 0; i < NUM_LEGS; i++) {
+                const leg = legs[i];
+                document.getElementById(`servo-${i}-0`).innerText = leg.angles.coxa.toFixed(0) + '°';
+                document.getElementById(`servo-${i}-1`).innerText = leg.angles.femur.toFixed(0) + '°';
+                document.getElementById(`servo-${i}-2`).innerText = leg.angles.tibia.toFixed(0) + '°';
+
+                const stateTag = document.getElementById(`legState-${i}`);
+                if (leg.isStance) {
+                    stateTag.innerText = 'STANCE';
+                    stateTag.className = 'text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+                } else {
+                    stateTag.innerText = 'SWING';
+                    stateTag.className = 'text-[9px] px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20';
+                }
+            }
+        }
+
+        // --- MAIN ANIMATION LOOP ---
+        let lastTime = performance.now();
+        let frameCount = 0;
+        let lastFpsUpdate = performance.now();
+
+        function animate(currentTime) {
+            requestAnimationFrame(animate);
+
+            const delta = Math.min((currentTime - lastTime) / 1000, 0.05);
+            lastTime = currentTime;
+
+            frameCount++;
+            if (currentTime - lastFpsUpdate >= 1000) {
+                document.getElementById('fpsCounter').innerText = frameCount;
+                frameCount = 0;
+                lastFpsUpdate = currentTime;
+            }
+
+            // Input Velocity Smooth Acceleration
+            targetVel.z = 0;
+            targetVel.x = 0;
+            targetVel.turn = 0;
+
+            if (autoWalk) targetVel.z = 1.0;
+
+            if (keys['w']) targetVel.z = 1.0;
+            if (keys['s']) targetVel.z = -1.0;
+            if (keys['a']) targetVel.x = -0.7;
+            if (keys['d']) targetVel.x = 0.7;
+            if (keys['q']) targetVel.turn = 0.8;
+            if (keys['e']) targetVel.turn = -0.8;
+
+            const damp = 1 - Math.exp(-14 * delta);
+            currentVel.z += (targetVel.z - currentVel.z) * damp;
+            currentVel.x += (targetVel.x - currentVel.x) * damp;
+            currentVel.turn += (targetVel.turn - currentVel.turn) * damp;
+
+            const isMoving = Math.abs(currentVel.z) > 0.02 || Math.abs(currentVel.x) > 0.02 || Math.abs(currentVel.turn) > 0.02;
+
+            const speedFactor = parseFloat(document.getElementById('sliderSpeed').value);
+            const maxStepHeight = parseFloat(document.getElementById('sliderStepHeight').value);
+
+            document.getElementById('valSpeed').innerText = speedFactor.toFixed(1) + 'x';
+            document.getElementById('valStepHeight').innerText = maxStepHeight.toFixed(1) + ' cm';
+
+            if (isMoving || gaitMode === 'dance') {
+                gaitPhase += delta * 1.8 * speedFactor;
+                if (gaitPhase > 1.0) gaitPhase -= 1.0;
+            }
+
+            if (isMoving) {
+                const moveSpeed = 1.8 * speedFactor * delta;
+                hexapodGroup.translateZ(currentVel.z * moveSpeed);
+                hexapodGroup.translateX(currentVel.x * moveSpeed);
+                hexapodGroup.rotation.y += currentVel.turn * 0.8 * speedFactor * delta;
+
+                controls.target.copy(hexapodGroup.position);
+            }
+
+            // Calculate terrain height under robot center to auto-adjust body height
+            const centerGroundY = getGroundHeight(hexapodGroup.position.x, hexapodGroup.position.z);
+            const targetBodyHeight = centerGroundY - FLOOR_Y + bodyPoseTarget.y;
+
+            bodyPoseCurrent.y += (targetBodyHeight - bodyPoseCurrent.y) * damp;
+            bodyPoseCurrent.pitch += (bodyPoseTarget.pitch - bodyPoseCurrent.pitch) * damp;
+            bodyPoseCurrent.roll += (bodyPoseTarget.roll - bodyPoseCurrent.roll) * damp;
+
+            // Organic body sway & heave dynamics
+            const swayY = isMoving ? Math.sin(gaitPhase * Math.PI * 4) * 0.03 : 0;
+            const swayRoll = isMoving ? Math.cos(gaitPhase * Math.PI * 2) * 0.02 * currentVel.x : 0;
+            const swayPitch = isMoving ? Math.sin(gaitPhase * Math.PI * 2) * 0.02 * currentVel.z : 0;
+
+            robotBodyGroup.position.y = bodyPoseCurrent.y + swayY;
+            robotBodyGroup.rotation.x = bodyPoseCurrent.pitch + swayPitch;
+            robotBodyGroup.rotation.z = bodyPoseCurrent.roll + swayRoll;
+
+            // Update Scene World Matrix before running IK Solver
+            scene.updateMatrixWorld(true);
+
+            const swingDuration = (gaitMode === 'wave') ? 0.25 : 0.5;
+
+            for (let i = 0; i < NUM_LEGS; i++) {
+                const leg = legs[i];
+                const legPhaseOffset = getLegGaitPhase(i);
+                let normPhase = (gaitPhase + legPhaseOffset) % 1.0;
+
+                if (gaitMode === 'dance') {
+                    const danceHeight = Math.sin((gaitPhase + legPhaseOffset) * Math.PI * 2) * 0.5;
+                    const homeWorld = robotBodyGroup.localToWorld(leg.homeFootPos.clone());
+                    homeWorld.y += danceHeight;
+                    solveIK(leg, homeWorld);
+                    leg.isStance = danceHeight <= 0;
+                    continue;
+                }
+
+                if (normPhase < swingDuration && isMoving) {
+                    // Capture exact liftoff position on first frame of swing phase
+                    if (leg.isStance) {
+                        leg.isStance = false;
+                        leg.liftOffWorldPos.copy(leg.currentWorldFootPos);
+                    }
+
+                    const swingProgress = normPhase / swingDuration;
+                    // Smoothstep S-curve easing (3t^2 - 2t^3) for zero-jerk swing
+                    const smoothProgress = swingProgress * swingProgress * (3 - 2 * swingProgress);
+
+                    const strideLength = 1.3 * speedFactor;
+                    const predictOffset = new THREE.Vector3(
+                        currentVel.x * strideLength * 0.5,
+                        0,
+                        currentVel.z * strideLength * 0.5
+                    );
+
+                    if (Math.abs(currentVel.turn) > 0.05) {
+                        const turnAngle = currentVel.turn * 0.35 * speedFactor;
+                        predictOffset.applyAxisAngle(new THREE.Vector3(0, 1, 0), turnAngle);
+                    }
+
+                    const targetHomeWorld = robotBodyGroup.localToWorld(leg.homeFootPos.clone()).add(predictOffset);
+                    
+                    // Terrain adaptation: Raycast ground height at landing position
+                    const landGroundY = getGroundHeight(targetHomeWorld.x, targetHomeWorld.z);
+                    targetHomeWorld.y = landGroundY;
+
+                    const currentWorldPos = leg.liftOffWorldPos.clone().lerp(targetHomeWorld, smoothProgress);
+                    const peakGroundY = Math.max(leg.liftOffWorldPos.y, landGroundY);
+                    currentWorldPos.y = peakGroundY + Math.sin(swingProgress * Math.PI) * maxStepHeight;
+
+                    leg.currentWorldFootPos.copy(currentWorldPos);
+                    leg.landTargetWorldPos.copy(targetHomeWorld);
+
+                } else {
+                    if (!leg.isStance) {
+                        leg.isStance = true;
+                    }
+                    // Keep foot planted on current terrain surface with smooth Y adaptation
+                    const groundY = getGroundHeight(leg.currentWorldFootPos.x, leg.currentWorldFootPos.z);
+                    leg.currentWorldFootPos.y += (groundY - leg.currentWorldFootPos.y) * 0.25;
+
+                    // If idle, smoothly restore feet to neutral home stance
+                    if (!isMoving) {
+                        const homeWorld = robotBodyGroup.localToWorld(leg.homeFootPos.clone());
+                        homeWorld.y = groundY;
+                        leg.currentWorldFootPos.lerp(homeWorld, 0.08);
+                    }
+                }
+
+                solveIK(leg, leg.currentWorldFootPos);
+            }
+
+            updateTelemetryUI();
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        window.onload = function() {
+            setTerrainMode('flat');
+            requestAnimationFrame(animate);
+        };
+    </script>
+</body>
+</html>
