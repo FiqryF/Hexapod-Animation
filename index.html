@@ -1,1130 +1,2335 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hexapod 18 Servo Simulator - Kinematika Terbalik & Simulation HUD</title>
-
-    <!-- Tailwind CSS CDN -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Hexapod IK Studio — 18 & 19-Servo 3D Simulation</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        cyber: {
-                            bg: '#090d16',
-                            card: 'rgba(15, 23, 42, 0.75)',
-                            border: 'rgba(239, 68, 68, 0.3)',
-                            red: '#ff3b5c',
-                            orange: '#ff6b00',
-                            cyan: '#00f0ff',
-                            accent: '#ef4444'
-                        }
-                    },
-                    fontFamily: {
-                        mono: ['JetBrains Mono', 'monospace', 'sans-serif'],
-                        sans: ['Inter', 'sans-serif']
-                    }
-                }
-            }
-        }
-    </script>
-
-    <!-- FontAwesome & Google Fonts -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-        integrity="sha384-iw3OoTErCYJJB9mCa8LNS2hbsQ7M3C0EpIsO/H5+EGAkPGc6rk+V8i04oW/K5xq0" crossorigin="anonymous">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
-
-    <!-- Three.js & OrbitControls Libraries -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"
-        integrity="sha384-CI3ELBVUz9XQO+97x6nwMDPosPR5XvsxW2ua7N1Xeygeh1IxtgqtCkGfQY9WWdHu" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"
-        integrity="sha384-wagZhIFgY4hD+7awjQjR4e2E294y6J2HSnd8eTNc15ZubTeQeVRZwhQJ+W6hnBsf" crossorigin="anonymous"></script>
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Three.js r128 & OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #090d16;
-            color: #f1f5f9;
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
             overflow: hidden;
-            touch-action: manipulation;
+            background-color: #060913;
+            color: #f8fafc;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             user-select: none;
         }
-        .mono-font { font-family: 'JetBrains Mono', monospace; }
-        .glass-panel {
-            background: rgba(13, 19, 33, 0.82);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 107, 0, 0.25);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+        .mono-tabular {
+            font-family: 'JetBrains Mono', monospace;
+            font-variant-numeric: tabular-nums;
         }
-        .glass-panel-cyan {
-            background: rgba(13, 19, 33, 0.82);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(0, 240, 255, 0.25);
-        }
-        .glow-red { box-shadow: 0 0 15px rgba(255, 59, 92, 0.4); }
-        .glow-orange { box-shadow: 0 0 15px rgba(255, 107, 0, 0.4); }
-        
-        /* Custom Scrollbars */
-        ::-webkit-scrollbar { width: 4px; height: 4px; }
-        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
-        ::-webkit-scrollbar-thumb { background: rgba(255, 107, 0, 0.5); border-radius: 4px; }
-
-        /* Range Slider Styling */
-        input[type=range] {
-            -webkit-appearance: none;
-            appearance: none;
-            background: rgba(255, 255, 255, 0.1);
-            height: 6px;
-            border-radius: 3px;
-        }
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            height: 16px;
-            width: 16px;
-            border-radius: 50%;
-            background: #ff6b00;
-            cursor: pointer;
-            box-shadow: 0 0 8px #ff6b00;
-        }
-
-        /* Touch Control Buttons Active State */
-        #panelRemote .pad-btn:active, #panelRemote .pad-btn.active {
-            background-color: rgba(255, 107, 0, 0.4);
-            border-color: #ff6b00;
-            transform: scale(0.95);
-        }
-
-        #canvas-container canvas {
-            display: block;
+        #canvas-container {
+            position: fixed;
+            inset: 0;
             width: 100vw;
             height: 100vh;
+            z-index: 1;
+            touch-action: none;
+        }
+        /* Frosted Studio Glassmorphism */
+        .studio-glass {
+            background: rgba(10, 15, 29, 0.78);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(148, 163, 184, 0.16);
+            box-shadow: 0 14px 38px rgba(0, 0, 0, 0.62), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+        .studio-card {
+            background: rgba(15, 23, 42, 0.68);
+            border: 1px solid rgba(148, 163, 184, 0.12);
+        }
+        /* Custom Thin Scrollbar */
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(100, 116, 139, 0.42);
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(239, 68, 68, 0.75);
+        }
+        /* Custom Precision Range Sliders */
+        input[type="range"].studio-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 5px;
+            background: rgba(30, 41, 59, 0.95);
+            border-radius: 999px;
+            outline: none;
+            border: 1px solid rgba(71, 85, 105, 0.45);
+        }
+        input[type="range"].studio-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: #ef4444;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.75);
+            border: 2px solid #f8fafc;
+            transition: transform 0.12s ease, background-color 0.12s ease;
+        }
+        input[type="range"].studio-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.16);
+        }
+        input[type="range"].studio-slider.violet-thumb::-webkit-slider-thumb {
+            background: #a855f7;
+            box-shadow: 0 0 10px rgba(168, 85, 247, 0.8);
+        }
+        /* Tactile Gamepad D-Pad Buttons */
+        .pad-btn {
+            transition: transform 0.08s ease, background-color 0.1s ease, border-color 0.1s ease, box-shadow 0.1s ease;
+            touch-action: none;
+        }
+        .pad-btn:hover {
+            background: rgba(30, 41, 59, 0.95);
+            border-color: rgba(148, 163, 184, 0.4);
+        }
+        .pad-btn:active, .pad-btn.active-key {
+            transform: scale(0.92);
+            background: rgba(239, 68, 68, 0.36) !important;
+            border-color: #f87171 !important;
+            color: #ffffff !important;
+            box-shadow: 0 0 16px rgba(239, 68, 68, 0.5);
+        }
+        /* Smooth Drawer Transitions */
+        .drawer-transition {
+            transition: transform 0.26s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease;
         }
     </style>
 </head>
-<body class="w-full h-screen relative">
+<body>
+    <!-- Fullscreen 3D WebGL Viewport -->
+    <div id="canvas-container"></div>
 
-    <!-- 3D CANVAS CONTAINER -->
-    <div id="canvas-container" class="absolute inset-0 z-0"></div>
+    <!-- RESTORE HUD FLOATING PILL (Shown only when Clean HUD mode is active) -->
+    <button id="btnRestoreHud" onclick="toggleCleanHud()" class="hidden fixed top-3 right-3 z-40 studio-glass px-3.5 py-2 rounded-full text-xs font-bold text-slate-100 hover:border-red-400/60 transition flex items-center gap-2 shadow-2xl">
+        <span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+        <svg class="w-4 h-4 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+        </svg>
+        <span>Restore HUD</span>
+    </button>
 
-    <!-- HEADER TOOLBAR (Top Navigation) -->
-    <header class="absolute top-0 left-0 right-0 z-20 p-3 md:p-4 flex items-center justify-between pointer-events-none">
-        <div class="flex items-center space-x-3 pointer-events-auto">
-            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-red-600 to-orange-500 flex items-center justify-center shadow-lg glow-orange">
-                <i class="fa-solid fa-spider text-white text-lg"></i>
+    <!-- 1. TOP FLOATING HEADER BAR -->
+    <header id="topHeaderBar" class="fixed top-2.5 left-2.5 right-2.5 z-30 studio-glass rounded-2xl px-3 py-2 lg:px-4 lg:py-2.5 flex flex-wrap lg:flex-nowrap items-center justify-between gap-2 drawer-transition">
+        <!-- Left Brand, Servo Count Badge & FPS -->
+        <div class="flex items-center gap-2.5 min-w-0">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-red-500 via-orange-500 to-amber-500 flex items-center justify-center shadow-lg shadow-red-600/25 shrink-0">
+                <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3.5"/>
+                    <path d="M12 8.5V4M9 9.5L4.5 5M15 9.5l4.5-4.5M8.5 12H3M15.5 12h5.5M9 14.5L4.5 19M15 14.5l4.5 4.5"/>
+                </svg>
             </div>
-            <div>
-                <h1 class="text-base md:text-lg font-bold tracking-wider text-white flex items-center gap-2">
-                    HEXAPOD 18-SERVO <span class="text-xs px-2 py-0.5 rounded bg-red-950 text-red-400 border border-red-800 font-mono">IK V3.0</span>
-                </h1>
-                <p class="text-xs text-slate-400 hidden sm:block">Inverse Kinematics Terrain Simulator & Telemetry</p>
+            <div class="min-w-0">
+                <div class="flex items-center gap-1.5 sm:gap-2">
+                    <h1 class="text-xs sm:text-sm lg:text-[15px] font-extrabold tracking-tight text-white truncate">
+                        HEXAPOD IK STUDIO
+                    </h1>
+                    <span id="badgeServoCount" class="px-2 py-0.5 text-[10px] mono-tabular font-bold rounded-full bg-red-500/20 text-red-300 border border-red-500/40 shrink-0">
+                        18 SERVO
+                    </span>
+                    <span id="fpsCounter" class="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 text-[10px] mono-tabular font-semibold rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shrink-0">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                        60 FPS
+                    </span>
+                </div>
+                <p class="text-[11px] text-slate-400 truncate hidden xl:block">
+                    C²-Continuous Inverse Kinematics • 4 Robot Variants &amp; Raycast Terrain Engine
+                </p>
             </div>
         </div>
 
-        <!-- Top Right Actions -->
-        <div class="flex items-center space-x-2 pointer-events-auto">
-            <button id="btnAutoWalk" onclick="toggleAutoWalk()" class="px-4 py-2 rounded-xl text-xs md:text-sm font-semibold bg-red-600 hover:bg-red-500 text-white shadow-lg transition-all flex items-center gap-2 glow-red">
-                <i class="fa-solid fa-play" id="autoWalkIcon"></i>
-                <span id="autoWalkText">AUTO MAJU</span>
+        <!-- Center Quick 4-Button Robot Variant Switcher -->
+        <div class="order-3 lg:order-2 w-full lg:w-auto flex items-center gap-1 bg-slate-950/80 p-1 rounded-xl border border-slate-800/90 overflow-x-auto">
+            <button onclick="selectVariant('ultrasonic')" id="hdr-var-ultrasonic" class="flex-1 lg:flex-initial px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition bg-red-600 text-white shadow whitespace-nowrap flex items-center justify-center gap-1.5">
+                <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h3l2-6 4 12 4-12 2 6h5"/></svg>
+                <span>Ultrasonic</span>
+            </button>
+            <button onclick="selectVariant('espcam')" id="hdr-var-espcam" class="flex-1 lg:flex-initial px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition text-slate-300 hover:bg-slate-800/90 whitespace-nowrap flex items-center justify-center gap-1.5">
+                <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                <span>ESP32-CAM</span>
+            </button>
+            <button onclick="selectVariant('ultrasonic_head')" id="hdr-var-ultrasonic_head" class="flex-1 lg:flex-initial px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition text-slate-300 hover:bg-slate-800/90 whitespace-nowrap flex items-center justify-center gap-1.5">
+                <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="8" width="18" height="10" rx="2"/><circle cx="8" cy="13" r="2"/><circle cx="16" cy="13" r="2"/><path d="M12 4v4"/></svg>
+                <span>Ultrasonic + Head</span>
+            </button>
+            <button onclick="selectVariant('espcam_head')" id="hdr-var-espcam_head" class="flex-1 lg:flex-initial px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition text-slate-300 hover:bg-slate-800/90 whitespace-nowrap flex items-center justify-center gap-1.5">
+                <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+                <span>ESP32-CAM + Head</span>
+            </button>
+        </div>
+
+        <!-- Right Live Sensor Status Badge & Action Toggles -->
+        <div class="order-2 lg:order-3 flex items-center gap-1.5 shrink-0">
+            <!-- Live Sensor Status Pill -->
+            <div id="sensorStatusBadge" class="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-cyan-950/65 border border-cyan-500/35 text-[11px] mono-tabular font-semibold text-cyan-300">
+                <span id="sensorStatusDot" class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+                <span id="sensorStatusText">200 cm</span>
+            </div>
+
+            <!-- Prominent AUTO JALAN Toggle Button -->
+            <button id="btnAutoWalk" onclick="toggleAutoWalk()" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white shadow-lg shadow-red-600/30 transition flex items-center gap-1.5">
+                <svg id="iconAutoPlay" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                <svg id="iconAutoStop" class="w-3.5 h-3.5 hidden" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>
+                <span id="textAutoWalk">AUTO JALAN</span>
             </button>
 
-            <!-- Desktop Toggle UI Buttons -->
-            <button onclick="togglePanel('controls')" class="hidden md:flex p-2.5 rounded-xl glass-panel text-slate-300 hover:text-white transition" title="Toggle Controls">
-                <i class="fa-solid fa-sliders"></i>
+            <!-- Label 3D Visibility Toggle -->
+            <button id="btnToggleLabels" onclick="toggleLabels()" title="Toggle Label 3D (L1-L6 & Sendi)" class="px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 transition flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>
+                </svg>
+                <span class="hidden md:inline">Label 3D</span>
             </button>
-            <button onclick="togglePanel('telemetry')" class="hidden md:flex p-2.5 rounded-xl glass-panel text-slate-300 hover:text-white transition" title="Toggle Telemetry">
-                <i class="fa-solid fa-microchip"></i>
+
+            <!-- Clean HUD Button -->
+            <button id="btnCleanHud" onclick="toggleCleanHud()" title="Clean HUD (Tampilan Bersih 3D)" class="px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800/90 text-slate-200 border border-slate-700 hover:border-slate-500 hover:bg-slate-700 transition flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>
+                </svg>
+                <span class="hidden md:inline">Clean HUD</span>
             </button>
-            <div class="px-3 py-1.5 rounded-xl glass-panel text-xs font-mono text-cyan-400 flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span id="fpsVal">60</span> FPS
-            </div>
         </div>
     </header>
 
-    <!-- LEFT PANEL: CONTROLS & TERRAIN OPTIONS -->
-    <aside id="panelControls" aria-labelledby="controlsTitle" class="absolute top-16 md:top-20 left-3 md:left-4 z-20 w-80 max-h-[calc(100vh-6rem)] overflow-y-auto glass-panel rounded-2xl p-4 space-y-5 transition-all duration-300">
-        <div class="flex items-center justify-between border-b border-slate-700/60 pb-3">
-            <span id="controlsTitle" class="text-xs font-bold text-orange-400 uppercase tracking-widest flex items-center gap-2">
-                <i class="fa-solid fa-gears"></i> Parameter Robot
+    <!-- 2. LEFT COLLAPSIBLE CONTROL DRAWER (290px wide on desktop, slide-up drawer on mobile) -->
+    <aside id="leftControlDrawer" class="fixed top-[6.25rem] lg:top-[4.35rem] left-2.5 right-2.5 lg:right-auto lg:left-2.5 bottom-[4.4rem] lg:bottom-3 lg:w-[290px] z-20 studio-glass rounded-2xl flex flex-col overflow-hidden drawer-transition hidden lg:flex">
+        <!-- Drawer Header -->
+        <div class="px-3.5 py-2.5 border-b border-slate-800/80 flex items-center justify-between shrink-0">
+            <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-200 flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/></svg>
+                Studio Controls
             </span>
-            <span class="text-[10px] font-mono text-slate-400">IK-ENGINE</span>
+            <button onclick="toggleDesktopLeftDrawer()" title="Ciutkan / Perluas Panel Kontrol" class="hidden lg:flex w-6 h-6 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-slate-300 items-center justify-center transition">
+                <svg id="leftCollapseIcon" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
         </div>
 
-        <!-- Gait Mode Selection -->
-        <div class="space-y-2">
-            <p class="text-xs font-semibold text-slate-300">Pola Langkah (Gait)</p>
-            <div class="grid grid-cols-2 gap-2">
-                <button onclick="setGait('tripod')" id="gait-tripod" class="gait-btn py-2 px-3 rounded-lg text-xs font-medium border border-orange-500/50 bg-orange-500/20 text-orange-300 transition">
-                    <i class="fa-solid fa-bolt mr-1"></i> Tripod (Cepat)
-                </button>
-                <button onclick="setGait('wave')" id="gait-wave" class="gait-btn py-2 px-3 rounded-lg text-xs font-medium border border-slate-700 bg-slate-800/50 text-slate-400 hover:text-white transition">
-                    <i class="fa-solid fa-water mr-1"></i> Wave (Presisi)
-                </button>
-                <button onclick="setGait('ripple')" id="gait-ripple" class="gait-btn py-2 px-3 rounded-lg text-xs font-medium border border-slate-700 bg-slate-800/50 text-slate-400 hover:text-white transition">
-                    <i class="fa-solid fa-dharmachakra mr-1"></i> Ripple (Stabil)
-                </button>
-                <button onclick="setGait('dance')" id="gait-dance" class="gait-btn py-2 px-3 rounded-lg text-xs font-medium border border-slate-700 bg-slate-800/50 text-slate-400 hover:text-white transition">
-                    <i class="fa-solid fa-music mr-1"></i> Dance Mode
-                </button>
-            </div>
-        </div>
-
-        <!-- Terrain Simulation Selector -->
-        <div class="space-y-2">
-            <p class="text-xs font-semibold text-slate-300 flex items-center justify-between">
-                <span>Rintangan Medan (Terrain)</span>
-                <span class="text-[10px] text-cyan-400 font-mono">RAYCAST IK</span>
-            </p>
-            <div class="grid grid-cols-2 gap-2">
-                <button onclick="setTerrain('flat')" id="terrain-flat" class="terrain-btn py-2 px-2.5 rounded-lg text-xs border border-cyan-500/50 bg-cyan-500/20 text-cyan-300 transition text-left">
-                    <i class="fa-solid fa-border-all mr-1"></i> Datar
-                </button>
-                <button onclick="setTerrain('blocks')" id="terrain-blocks" class="terrain-btn py-2 px-2.5 rounded-lg text-xs border border-slate-700 bg-slate-800/50 text-slate-400 hover:text-white transition text-left">
-                    <i class="fa-solid fa-cubes mr-1"></i> Balok Step
-                </button>
-                <button onclick="setTerrain('boulders')" id="terrain-boulders" class="terrain-btn py-2 px-2.5 rounded-lg text-xs border border-slate-700 bg-slate-800/50 text-slate-400 hover:text-white transition text-left">
-                    <i class="fa-solid fa-mountain mr-1"></i> Batu Bouldering
-                </button>
-                <button onclick="setTerrain('ramp')" id="terrain-ramp" class="terrain-btn py-2 px-2.5 rounded-lg text-xs border border-slate-700 bg-slate-800/50 text-slate-400 hover:text-white transition text-left">
-                    <i class="fa-solid fa-chart-line mr-1"></i> Tanjakan Ramp
-                </button>
-            </div>
-        </div>
-
-        <!-- Robot Body Pose Sliders -->
-        <div class="space-y-3 pt-1 border-t border-slate-700/60">
-            <div class="flex items-center justify-between">
-                <p class="text-xs font-semibold text-slate-300">Postur Badan (Pose)</p>
-                <button onclick="resetPose()" class="text-[10px] text-orange-400 hover:underline">Reset</button>
-            </div>
-
-            <div class="space-y-1">
-                <div class="flex justify-between text-xs text-slate-400">
-                    <label for="sliderBodyY">Tinggi (Height)</label>
-                    <span id="valBodyY" class="mono-font text-white">0.0 cm</span>
+        <!-- Scrollable Drawer Body -->
+        <div id="leftDrawerBody" class="p-3 overflow-y-auto space-y-3 flex-1">
+            <!-- Card 1: Pola Langkah (Gait) -->
+            <div class="studio-card rounded-xl p-2.5 space-y-2">
+                <div class="flex items-center justify-between">
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                        Pola Langkah (Gait)
+                    </span>
+                    <span id="gaitBadge" class="text-[10px] mono-tabular font-bold px-1.5 py-0.5 rounded bg-red-500/20 text-red-300 border border-red-500/30">TRIPOD</span>
                 </div>
-                <input type="range" id="sliderBodyY" min="-1.0" max="1.5" step="0.05" value="0" class="w-full" oninput="updatePose()">
+                <div class="grid grid-cols-2 gap-1.5">
+                    <button onclick="selectGait('tripod')" id="gait-tripod" class="py-2 px-2 rounded-lg text-xs font-bold transition bg-red-600 text-white shadow shadow-red-600/25">
+                        Tripod
+                    </button>
+                    <button onclick="selectGait('wave')" id="gait-wave" class="py-2 px-2 rounded-lg text-xs font-semibold transition bg-slate-900/90 text-slate-300 border border-slate-800 hover:border-slate-600">
+                        Wave
+                    </button>
+                    <button onclick="selectGait('ripple')" id="gait-ripple" class="py-2 px-2 rounded-lg text-xs font-semibold transition bg-slate-900/90 text-slate-300 border border-slate-800 hover:border-slate-600">
+                        Ripple
+                    </button>
+                    <button onclick="selectGait('dance')" id="gait-dance" class="py-2 px-2 rounded-lg text-xs font-semibold transition bg-slate-900/90 text-slate-300 border border-slate-800 hover:border-slate-600">
+                        Dance
+                    </button>
+                </div>
             </div>
 
-            <div class="space-y-1">
-                <div class="flex justify-between text-xs text-slate-400">
-                    <label for="sliderPitch">Pitch (Kemiringan Depan)</label>
-                    <span id="valPitch" class="mono-font text-white">0°</span>
+            <!-- Card 2: Medan Uji IK (Terrain) -->
+            <div class="studio-card rounded-xl p-2.5 space-y-2">
+                <div class="flex items-center justify-between">
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg>
+                        Medan Uji IK (Terrain)
+                    </span>
+                    <span id="terrainBadge" class="text-[10px] mono-tabular font-semibold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300">FLAT</span>
                 </div>
-                <input type="range" id="sliderPitch" min="-15" max="15" step="1" value="0" class="w-full" oninput="updatePose()">
+                <div class="grid grid-cols-2 gap-1.5">
+                    <button onclick="selectTerrain('flat')" id="terrain-flat" class="py-1.5 px-2 rounded-lg text-xs font-bold transition bg-amber-600 text-white">
+                        Lantai Datar
+                    </button>
+                    <button onclick="selectTerrain('blocks')" id="terrain-blocks" class="py-1.5 px-2 rounded-lg text-xs font-semibold transition bg-slate-900/90 text-slate-300 border border-slate-800 hover:border-slate-600">
+                        Balok Step
+                    </button>
+                    <button onclick="selectTerrain('boulders')" id="terrain-boulders" class="py-1.5 px-2 rounded-lg text-xs font-semibold transition bg-slate-900/90 text-slate-300 border border-slate-800 hover:border-slate-600">
+                        Bebatuan
+                    </button>
+                    <button onclick="selectTerrain('ramp')" id="terrain-ramp" class="py-1.5 px-2 rounded-lg text-xs font-semibold transition bg-slate-900/90 text-slate-300 border border-slate-800 hover:border-slate-600">
+                        Tanjakan
+                    </button>
+                </div>
             </div>
 
-            <div class="space-y-1">
-                <div class="flex justify-between text-xs text-slate-400">
-                    <label for="sliderRoll">Roll (Kemiringan Samping)</label>
-                    <span id="valRoll" class="mono-font text-white">0°</span>
+            <!-- Card 3: Kontrol Kepala (S19 • Head) - Active when "+ Head" variant is selected -->
+            <div id="headControlCard" class="hidden rounded-xl p-2.5 bg-purple-950/35 border border-purple-500/45 space-y-2.5">
+                <div class="flex items-center justify-between gap-1">
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-purple-200 flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.93 4.93l2.12 2.12M16.95 16.95l2.12 2.12M2 12h3M19 12h3"/></svg>
+                        Kontrol Kepala (S19 • Head)
+                    </span>
                 </div>
-                <input type="range" id="sliderRoll" min="-15" max="15" step="1" value="0" class="w-full" oninput="updatePose()">
+                <div class="space-y-1">
+                    <div class="flex justify-between text-xs text-slate-300">
+                        <span>Pan Angle</span>
+                        <span id="valHeadPan" class="mono-tabular text-purple-300 font-bold">0°</span>
+                    </div>
+                    <input type="range" id="sliderHeadPan" min="-65" max="65" step="1" value="0" class="w-full studio-slider violet-thumb" oninput="onManualHeadPan(this.value)">
+                </div>
+                <div class="grid grid-cols-2 gap-1.5">
+                    <button onclick="centerHeadServo()" class="py-1.5 px-2 rounded-lg text-[11px] font-semibold bg-slate-900/95 text-slate-200 border border-slate-700 hover:border-purple-400 transition">
+                        Center (0°)
+                    </button>
+                    <button id="btnHeadAutoScan" onclick="toggleHeadAutoScan()" class="py-1.5 px-2 rounded-lg text-[11px] font-semibold bg-slate-900/95 text-slate-400 border border-slate-700 transition">
+                        Auto Scan: OFF
+                    </button>
+                </div>
             </div>
-        </div>
 
-        <!-- Walking Parameters -->
-        <div class="space-y-3 pt-1 border-t border-slate-700/60">
-            <p class="text-xs font-semibold text-slate-300">Dinamika Langkah</p>
-            <div class="space-y-1">
-                <div class="flex justify-between text-xs text-slate-400">
-                    <label for="sliderSpeed">Kecepatan Langkah</label>
-                    <span id="valSpeed" class="mono-font text-white">1.0x</span>
+            <!-- Card 4: Postur & Langkah -->
+            <div class="studio-card rounded-xl p-2.5 space-y-2.5">
+                <div class="flex items-center justify-between">
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
+                        Postur &amp; Langkah
+                    </span>
+                    <button onclick="resetPose()" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-red-500/15 text-red-300 border border-red-500/30 hover:bg-red-500/25 transition">
+                        Reset Postur
+                    </button>
                 </div>
-                <input type="range" id="sliderSpeed" min="0.3" max="2.0" step="0.1" value="1.0" class="w-full">
-            </div>
 
-            <div class="space-y-1">
-                <div class="flex justify-between text-xs text-slate-400">
-                    <label for="sliderStepHeight">Tinggi Angkatan Kaki</label>
-                    <span id="valStepHeight" class="mono-font text-white">0.8 cm</span>
+                <!-- Tinggi Bodi (1.2 - 3.0 cm) -->
+                <div class="space-y-1">
+                    <div class="flex justify-between text-xs text-slate-300">
+                        <span>Tinggi Bodi</span>
+                        <span id="valBodyHeight" class="mono-tabular text-red-400 font-bold">2.10 cm</span>
+                    </div>
+                    <input type="range" id="sliderHeight" min="1.2" max="3.0" step="0.05" value="2.1" class="w-full studio-slider" oninput="updatePoseParam()">
                 </div>
-                <input type="range" id="sliderStepHeight" min="0.4" max="1.8" step="0.1" value="0.8" class="w-full">
+
+                <!-- Pitch (-18 to +18 deg) -->
+                <div class="space-y-1">
+                    <div class="flex justify-between text-xs text-slate-300">
+                        <span>Pitch</span>
+                        <span id="valPitch" class="mono-tabular text-red-400 font-bold">0°</span>
+                    </div>
+                    <input type="range" id="sliderPitch" min="-18" max="18" step="1" value="0" class="w-full studio-slider" oninput="updatePoseParam()">
+                </div>
+
+                <!-- Roll (-18 to +18 deg) -->
+                <div class="space-y-1">
+                    <div class="flex justify-between text-xs text-slate-300">
+                        <span>Roll</span>
+                        <span id="valRoll" class="mono-tabular text-red-400 font-bold">0°</span>
+                    </div>
+                    <input type="range" id="sliderRoll" min="-18" max="18" step="1" value="0" class="w-full studio-slider" oninput="updatePoseParam()">
+                </div>
+
+                <!-- Kecepatan Jalan (0.3x - 2.2x) -->
+                <div class="space-y-1 pt-1 border-t border-slate-800/70">
+                    <div class="flex justify-between text-xs text-slate-300">
+                        <span>Kecepatan Jalan</span>
+                        <span id="valSpeed" class="mono-tabular text-emerald-400 font-bold">1.0x</span>
+                    </div>
+                    <input type="range" id="sliderSpeed" min="0.3" max="2.2" step="0.1" value="1.0" class="w-full studio-slider" oninput="updateGaitParam()">
+                </div>
+
+                <!-- Tinggi Langkah (0.3 - 1.4 cm) -->
+                <div class="space-y-1">
+                    <div class="flex justify-between text-xs text-slate-300">
+                        <span>Tinggi Langkah</span>
+                        <span id="valStepHeight" class="mono-tabular text-emerald-400 font-bold">0.85 cm</span>
+                    </div>
+                    <input type="range" id="sliderStepHeight" min="0.3" max="1.4" step="0.05" value="0.85" class="w-full studio-slider" oninput="updateGaitParam()">
+                </div>
             </div>
         </div>
     </aside>
 
-    <!-- RIGHT PANEL: 18 SERVO TELEMETRY GAUGES -->
-    <aside id="panelTelemetry" aria-labelledby="telemetryTitle" class="absolute top-16 md:top-20 right-3 md:right-4 z-20 w-80 max-h-[calc(100vh-6rem)] overflow-y-auto glass-panel rounded-2xl p-4 space-y-4 transition-all duration-300">
-        <div class="flex items-center justify-between border-b border-slate-700/60 pb-3">
-            <span id="telemetryTitle" class="text-xs font-bold text-cyan-400 uppercase tracking-widest flex items-center gap-2">
-                <i class="fa-solid fa-microchip"></i> Telemetri 18 Servo
+    <!-- Floating Desktop Expand Pill when Left Drawer is collapsed -->
+    <button id="btnExpandLeft" onclick="toggleDesktopLeftDrawer()" class="hidden fixed top-[4.35rem] left-2.5 z-20 studio-glass px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:border-red-400/50 transition items-center gap-1.5">
+        <svg class="w-3.5 h-3.5 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="9 18 15 12 9 6"/></svg>
+        <span>Kontrol</span>
+    </button>
+
+    <!-- 3. RIGHT COLLAPSIBLE TELEMETRY DRAWER (275px wide on desktop, slide-up drawer on mobile) -->
+    <aside id="rightTelemetryDrawer" class="fixed top-[6.25rem] lg:top-[4.35rem] left-2.5 right-2.5 lg:left-auto lg:right-2.5 bottom-[4.4rem] lg:bottom-3 lg:w-[275px] z-20 studio-glass rounded-2xl flex flex-col overflow-hidden drawer-transition hidden lg:flex">
+        <!-- Telemetry Header with Collapse Button -->
+        <div class="px-3.5 py-2.5 border-b border-slate-800/80 flex items-center justify-between shrink-0">
+            <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-200 flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                <span id="telemetryHeaderTitle">TELEMETRI 18 SERVO</span>
             </span>
-            <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800 font-mono">LIVE</span>
+            <div class="flex items-center gap-1.5">
+                <span class="text-[9px] mono-tabular font-bold px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                    IK LIVE
+                </span>
+                <button onclick="toggleDesktopRightDrawer()" title="Ciutkan / Perluas Telemetri" class="hidden lg:flex w-6 h-6 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-slate-300 items-center justify-center transition">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+            </div>
         </div>
 
-        <!-- Servo Legs Grid Container -->
-        <div id="telemetryGrid" class="space-y-3">
-            <!-- Dynamic Telemetry Rows Generated via JS -->
+        <!-- Scrollable Telemetry Cards -->
+        <div class="p-3 overflow-y-auto space-y-2 flex-1">
+            <!-- S19 • HEAD Telemetry Card (Shown for 19-Servo Variants) -->
+            <div id="headTelemetryCard" class="hidden p-2.5 rounded-xl bg-purple-950/35 border border-purple-500/45 space-y-1.5">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-purple-200">
+                        <span class="text-purple-400 mono-tabular mr-1">S19</span> HEAD SERVO
+                    </span>
+                    <span id="head-state-badge" class="text-[9px] mono-tabular font-semibold px-1.5 py-0.5 rounded bg-slate-900 text-purple-300 border border-purple-600/50">
+                        STATIC (0°)
+                    </span>
+                </div>
+                <div class="bg-slate-950/85 rounded-lg p-1.5 border border-purple-800/40">
+                    <div class="flex justify-between text-[10px] text-slate-400 mb-1">
+                        <span>PAN ANGLE</span>
+                        <span id="tele-head-deg" class="mono-tabular text-purple-300 font-bold">0°</span>
+                    </div>
+                    <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                        <div id="tele-head-bar" class="h-full bg-purple-500 transition-all duration-75" style="width: 50%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- L1 through L6 Cards -->
+            <div id="servoTelemetryList" class="space-y-2"></div>
         </div>
     </aside>
 
-    <!-- BOTTOM FLOATING REMOTE D-PAD CONTROLLER -->
-    <div id="panelRemote" class="absolute bottom-16 md:bottom-6 left-1/2 -translate-x-1/2 z-20 transition-all duration-300">
-        <div class="glass-panel rounded-3xl p-3 md:p-4 flex items-center gap-4 shadow-2xl">
-            
-            <!-- Left Rotation Buttons -->
-            <div class="flex flex-col gap-2">
-                <button id="btnTurnLeft" class="pad-btn w-11 h-11 rounded-2xl glass-panel text-slate-200 hover:text-white flex items-center justify-center text-sm transition">
-                    <i class="fa-solid fa-rotate-left"></i>
-                </button>
-                <span class="text-[9px] text-center text-slate-400 font-mono">PUTAR L</span>
+    <!-- Floating Desktop Expand Pill when Right Telemetry Drawer is collapsed -->
+    <button id="btnExpandRight" onclick="toggleDesktopRightDrawer()" class="hidden fixed top-[4.35rem] right-2.5 z-20 studio-glass px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:border-emerald-400/50 transition items-center gap-1.5">
+        <svg class="w-3.5 h-3.5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="15 18 9 12 15 6"/></svg>
+        <span>Telemetri</span>
+    </button>
+
+    <!-- 4. PICTURE-IN-PICTURE LIVE FPV CAMERA FEED (ESP32-CAM & ESP32-CAM + Head) -->
+    <div id="fpvCameraWindow" class="hidden fixed top-[6.25rem] lg:top-[4.35rem] left-2.5 lg:left-[308px] z-20 studio-glass rounded-2xl p-2 w-56 sm:w-64 border border-cyan-500/45 shadow-2xl">
+        <div class="flex items-center justify-between mb-1.5 px-0.5">
+            <div class="flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+                <span class="text-[10px] mono-tabular font-bold text-red-400">REC</span>
+                <span class="text-[10px] mono-tabular font-bold text-cyan-300">• FPV CAM</span>
             </div>
-
-            <!-- Directional D-Pad -->
-            <div class="grid grid-cols-3 gap-1.5 w-36 h-36 p-1 rounded-2xl bg-slate-900/60 border border-slate-800">
-                <div></div>
-                <button id="btnFwd" class="pad-btn rounded-xl bg-slate-800/80 border border-slate-700 text-slate-200 flex items-center justify-center text-lg shadow">
-                    <i class="fa-solid fa-caret-up"></i>
-                </button>
-                <div></div>
-
-                <button id="btnLeft" class="pad-btn rounded-xl bg-slate-800/80 border border-slate-700 text-slate-200 flex items-center justify-center text-lg shadow">
-                    <i class="fa-solid fa-caret-left"></i>
-                </button>
-                <div class="flex items-center justify-center">
-                    <div class="w-3 h-3 rounded-full bg-orange-500/60 animate-ping"></div>
+            <button id="btnEspFlash" onclick="toggleEspCamFlash()" class="px-2 py-0.5 rounded-lg text-[10px] mono-tabular font-bold bg-slate-800/95 text-slate-300 border border-slate-700 hover:border-amber-400 transition flex items-center gap-1">
+                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                <span>FLASH LED</span>
+            </button>
+        </div>
+        <div class="relative rounded-xl overflow-hidden border border-slate-700/80 bg-black aspect-[16/10]">
+            <canvas id="fpvCanvas" class="w-full h-full block"></canvas>
+            <!-- Crosshair HUD Overlay -->
+            <div class="absolute inset-0 pointer-events-none flex items-center justify-center">
+                <div class="w-8 h-8 border border-cyan-400/55 rounded-full flex items-center justify-center">
+                    <div class="w-1 h-1 bg-cyan-400 rounded-full"></div>
                 </div>
-                <button id="btnRight" class="pad-btn rounded-xl bg-slate-800/80 border border-slate-700 text-slate-200 flex items-center justify-center text-lg shadow">
-                    <i class="fa-solid fa-caret-right"></i>
-                </button>
-
-                <div></div>
-                <button id="btnBwd" class="pad-btn rounded-xl bg-slate-800/80 border border-slate-700 text-slate-200 flex items-center justify-center text-lg shadow">
-                    <i class="fa-solid fa-caret-down"></i>
-                </button>
-                <div></div>
+                <div class="absolute w-14 h-[1px] bg-cyan-400/30"></div>
+                <div class="absolute h-10 w-[1px] bg-cyan-400/30"></div>
             </div>
-
-            <!-- Right Rotation Buttons -->
-            <div class="flex flex-col gap-2">
-                <button id="btnTurnRight" class="pad-btn w-11 h-11 rounded-2xl glass-panel text-slate-200 hover:text-white flex items-center justify-center text-sm transition">
-                    <i class="fa-solid fa-rotate-right"></i>
-                </button>
-                <span class="text-[9px] text-center text-slate-400 font-mono">PUTAR R</span>
+            <div class="absolute bottom-1 left-1.5 right-1.5 flex justify-between text-[9px] mono-tabular text-cyan-300/95 pointer-events-none bg-slate-950/50 px-1.5 py-0.5 rounded">
+                <span>OV2640 • LIVE</span>
+                <span id="fpvHeadingText">HDG: 000°</span>
             </div>
         </div>
     </div>
 
-    <!-- MOBILE NAVIGATION BOTTOM DOCK -->
-    <nav class="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-slate-950/90 border-t border-slate-800 backdrop-blur-md px-4 py-2 flex items-center justify-around">
-        <button onclick="selectMobileTab('3d')" id="tab-3d" class="flex flex-col items-center text-orange-400 text-xs">
-            <i class="fa-solid fa-cube text-base"></i>
-            <span class="text-[10px] mt-0.5">3D View</span>
+    <!-- 5. ERGONOMIC BOTTOM-CENTER FLOATING GAMEPAD CONTROLLER -->
+    <div id="gamepadPillBar" class="fixed bottom-[4.35rem] lg:bottom-3 left-1/2 -translate-x-1/2 z-20 studio-glass rounded-full px-3.5 py-2 flex items-center gap-2.5 sm:gap-4 border border-slate-700/75 shadow-2xl">
+        <!-- Tactile 4-Way Movement D-Pad -->
+        <div class="flex items-center gap-1">
+            <button id="btnLeft" data-action="left" title="Strafe Left [A]" class="pad-btn w-10 h-10 rounded-full bg-slate-900/95 border border-slate-700 text-slate-200 flex flex-col items-center justify-center">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                <span class="text-[8px] mono-tabular text-slate-400 leading-none">A</span>
+            </button>
+            <div class="flex flex-col gap-1">
+                <button id="btnForward" data-action="forward" title="Forward [W]" class="pad-btn w-10 h-10 rounded-full bg-slate-900/95 border border-slate-700 text-slate-200 flex flex-col items-center justify-center">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
+                    <span class="text-[8px] mono-tabular text-slate-400 leading-none">W</span>
+                </button>
+                <button id="btnBackward" data-action="backward" title="Backward [S]" class="pad-btn w-10 h-10 rounded-full bg-slate-900/95 border border-slate-700 text-slate-200 flex flex-col items-center justify-center">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                    <span class="text-[8px] mono-tabular text-slate-400 leading-none">S</span>
+                </button>
+            </div>
+            <button id="btnRight" data-action="right" title="Strafe Right [D]" class="pad-btn w-10 h-10 rounded-full bg-slate-900/95 border border-slate-700 text-slate-200 flex flex-col items-center justify-center">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                <span class="text-[8px] mono-tabular text-slate-400 leading-none">D</span>
+            </button>
+        </div>
+
+        <!-- Center AUTO & STOP Buttons -->
+        <div class="flex flex-col gap-1.5 px-2 border-x border-slate-800/90">
+            <button id="padBtnAuto" onclick="setAutoWalkState(true)" class="px-3 py-1.5 rounded-full text-[10px] mono-tabular font-extrabold bg-emerald-600/25 text-emerald-300 border border-emerald-500/45 hover:bg-emerald-600 hover:text-white transition">
+                AUTO
+            </button>
+            <button id="padBtnStop" onclick="stopAllMovement()" class="px-3 py-1.5 rounded-full text-[10px] mono-tabular font-extrabold bg-red-600/25 text-red-300 border border-red-500/45 hover:bg-red-600 hover:text-white transition">
+                STOP
+            </button>
+        </div>
+
+        <!-- Right-Side Turn Left [Q], Turn Right [E] & Reset Camera -->
+        <div class="flex items-center gap-1.5">
+            <button id="btnTurnLeft" data-action="turnLeft" title="Turn Left [Q]" class="pad-btn w-10 h-10 rounded-full bg-slate-900/95 border border-slate-700 text-slate-200 flex flex-col items-center justify-center">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                <span class="text-[8px] mono-tabular text-slate-400 leading-none">Q</span>
+            </button>
+            <button id="btnTurnRight" data-action="turnRight" title="Turn Right [E]" class="pad-btn w-10 h-10 rounded-full bg-slate-900/95 border border-slate-700 text-slate-200 flex flex-col items-center justify-center">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+                <span class="text-[8px] mono-tabular text-slate-400 leading-none">E</span>
+            </button>
+            <button onclick="resetCameraView()" title="Reset Camera View [R]" class="pad-btn w-10 h-10 rounded-full bg-slate-900/95 border border-slate-700 text-cyan-300 flex flex-col items-center justify-center">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="3.5"/></svg>
+                <span class="text-[7px] mono-tabular text-slate-400 leading-none">CAM</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 6. MOBILE 4-TAB NAVIGATION DOCK (< 1024px) -->
+    <nav id="mobileBottomDock" class="fixed bottom-2 left-2.5 right-2.5 z-30 lg:hidden studio-glass rounded-2xl p-1 grid grid-cols-4 gap-1">
+        <button onclick="setMobileTab('remote')" id="mob-tab-remote" class="py-1.5 rounded-xl text-[10px] sm:text-[11px] font-bold bg-red-600 text-white flex flex-col items-center gap-0.5 transition">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="4"/><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><circle cx="15" cy="11" r="1"/><circle cx="18" cy="13" r="1"/></svg>
+            <span>3D + Remote</span>
         </button>
-        <button onclick="selectMobileTab('controls')" id="tab-controls" class="flex flex-col items-center text-slate-400 text-xs">
-            <i class="fa-solid fa-sliders text-base"></i>
-            <span class="text-[10px] mt-0.5">Kontrol</span>
+        <button onclick="setMobileTab('controls')" id="mob-tab-controls" class="py-1.5 rounded-xl text-[10px] sm:text-[11px] font-semibold text-slate-300 flex flex-col items-center gap-0.5 transition">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/></svg>
+            <span>Kontrol</span>
         </button>
-        <button onclick="selectMobileTab('remote')" id="tab-remote" class="flex flex-col items-center text-slate-400 text-xs">
-            <i class="fa-solid fa-gamepad text-base"></i>
-            <span class="text-[10px] mt-0.5">Remote</span>
+        <button onclick="setMobileTab('telemetry')" id="mob-tab-telemetry" class="py-1.5 rounded-xl text-[10px] sm:text-[11px] font-semibold text-slate-300 flex flex-col items-center gap-0.5 transition">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            <span>Telemetri</span>
         </button>
-        <button onclick="selectMobileTab('telemetry')" id="tab-telemetry" class="flex flex-col items-center text-slate-400 text-xs">
-            <i class="fa-solid fa-microchip text-base"></i>
-            <span class="text-[10px] mt-0.5">Telemetri</span>
+        <button onclick="setMobileTab('full3d')" id="mob-tab-full3d" class="py-1.5 rounded-xl text-[10px] sm:text-[11px] font-semibold text-slate-300 flex flex-col items-center gap-0.5 transition">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            <span>Full 3D</span>
         </button>
     </nav>
 
-    <!-- SIMULATION LOGIC SCRIPT -->
     <script>
-        // Global Constants & State
-        const NUM_LEGS = 6;
-        
-        // Corrected Leg Angles (Front is -Z, Right is +X)
-        const LEG_ANGLES = [
-            -Math.PI / 4,    // Leg 1: Depan Kanan (-45 deg, X>0, Z<0)
-            0,               // Leg 2: Tengah Kanan (0 deg, X>0, Z=0)
-            Math.PI / 4,     // Leg 3: Belakang Kanan (45 deg, X>0, Z>0)
-            3 * Math.PI / 4, // Leg 4: Belakang Kiri (135 deg, X<0, Z>0)
-            Math.PI,         // Leg 5: Tengah Kiri (180 deg, X<0, Z=0)
-            -3 * Math.PI / 4 // Leg 6: Depan Kiri (-135 deg, X<0, Z<0)
-        ];
+        (function() {
+            'use strict';
 
-        const LEG_NAMES = ["Depan Kanan", "Tengah Kanan", "Belakang Kanan", "Belakang Kiri", "Tengah Kiri", "Depan Kiri"];
+            // =========================================================================
+            // 1. HEXAPOD MECHANICAL DIMENSIONS & CONSTANTS
+            // =========================================================================
+            const NUM_LEGS = 6;
 
-        // Leg Segment Lengths (in world units)
-        const L_COXA = 0.85;   // Hip rotater (Servo 1)
-        const L_FEMUR = 1.6;   // Thigh (Servo 2)
-        const L_TIBIA = 2.4;   // Shin / Curved Blade (Servo 3)
+            // Leg angles around hexagonal chassis (-Z is Forward)
+            const LEG_ANGLES = [
+                -Math.PI / 3.2,           // L1: Front-Right
+                0,                        // L2: Mid-Right
+                Math.PI / 3.2,            // L3: Rear-Right
+                Math.PI - Math.PI / 3.2,  // L4: Rear-Left
+                Math.PI,                  // L5: Mid-Left
+                -Math.PI + Math.PI / 3.2  // L6: Front-Left
+            ];
 
-        const DEFAULT_BODY_HEIGHT = 2.0; // Elevated standing height (Fix for ceper body)
-        const NEUTRAL_FOOT_R = 3.6;
-        const NEUTRAL_FOOT_Y = -DEFAULT_BODY_HEIGHT;
+            const LEG_META = [
+                { code: 'L1', name: 'Front-Right' },
+                { code: 'L2', name: 'Mid-Right' },
+                { code: 'L3', name: 'Rear-Right' },
+                { code: 'L4', name: 'Rear-Left' },
+                { code: 'L5', name: 'Mid-Left' },
+                { code: 'L6', name: 'Front-Left' }
+            ];
 
-        // Gait Patterns (Swing groups)
-        const GAIT_PATTERNS = {
-            tripod: {
-                groups: [[0, 3, 4], [1, 2, 5]], // 2 phases
-                dutyFactor: 0.5
-            },
-            wave: {
-                groups: [[0], [1], [2], [3], [4], [5]], // 6 phases
-                dutyFactor: 0.83
-            },
-            ripple: {
-                groups: [[0, 3], [1, 4], [2, 5]], // 3 phases
-                dutyFactor: 0.66
-            },
-            dance: {
-                groups: [[0, 2, 4], [1, 3, 5]],
-                dutyFactor: 0.5
-            }
-        };
+            const DEFAULT_BODY_HEIGHT = 2.10;
+            const HIP_RADIUS = 1.50;
+            const L_COXA = 0.85;
+            const L_FEMUR = 1.65;
+            const L_TIBIA = 2.45;
+            const NEUTRAL_RADIAL_DIST = 3.80;
 
-        // Global Simulation Variables
-        let currentGait = 'tripod';
-        let currentTerrain = 'flat';
-        let autoWalk = false;
-        let controlState = { forward: 0, strafe: 0, turn: 0 };
+            // =========================================================================
+            // 2. SIMULATION STATE
+            // =========================================================================
+            let currentVariant = 'ultrasonic'; // 'ultrasonic' | 'espcam' | 'ultrasonic_head' | 'espcam_head'
+            let currentGait = 'tripod';        // 'tripod' | 'wave' | 'ripple' | 'dance'
+            let currentTerrain = 'flat';       // 'flat' | 'blocks' | 'boulders' | 'ramp'
+            let isAutoWalking = false;
+            let show3DLabels = true;
+            let isCleanHud = false;
+            let desktopLeftCollapsed = false;
+            let desktopRightCollapsed = false;
+            let espFlashOn = false;
 
-        // Pose settings
-        let poseY = 0, posePitch = 0, poseRoll = 0;
-        let stepSpeed = 1.0, stepHeight = 0.8;
+            // Body Pose & Gait Parameters
+            let targetBodyHeight = DEFAULT_BODY_HEIGHT;
+            let currentBodyHeight = DEFAULT_BODY_HEIGHT;
+            let bodyHeightVel = 0;
+            let targetPitchDeg = 0;
+            let targetRollDeg = 0;
+            let gaitSpeedMult = 1.0;
+            let stepHeight = 0.85;
 
-        // Three.js Scene Variables
-        let scene, camera, renderer, controls;
-        let hexapodGroup, robotBodyGroup;
-        let legs = [];
-        let terrainObjects = [];
+            // Head Servo #19 State (Stationary at 0 deg by default)
+            let headAutoScan = false;
+            let headScanTime = 0;
+            let targetHeadPanRad = 0;
+            let currentHeadPanRad = 0;
+            let headPanVel = 0;
 
-        // Animation Loop Variables
-        let clock = new THREE.Clock();
-        let stepPhase = 0;
-        let hexapodHeading = 0; // Yaw angle in radians
-        let currentVelocity = new THREE.Vector3(0, 0, 0);
-        let currentTurnVel = 0; // Smooth angular velocity for turning
+            // Input & Critically Damped Motion State
+            const inputState = {
+                forward: false,
+                backward: false,
+                left: false,
+                right: false,
+                turnLeft: false,
+                turnRight: false
+            };
 
-        // --- 1. TELEMETRY UI INITIALIZATION ---
-        function initTelemetryUI() {
-            const container = document.getElementById('telemetryGrid');
-            container.innerHTML = '';
-            for (let i = 0; i < NUM_LEGS; i++) {
-                const legCard = document.createElement('div');
-                legCard.className = 'p-2.5 rounded-xl bg-slate-900/70 border border-slate-800 space-y-1.5';
-                legCard.innerHTML = `
-                    <div class="flex items-center justify-between text-xs">
-                        <span class="font-semibold text-slate-300">Leg ${i+1} (${LEG_NAMES[i]})</span>
-                        <span id="legState-${i}" class="text-[9px] px-1.5 py-0.2 rounded bg-emerald-950 text-emerald-400 font-mono">STANCE</span>
-                    </div>
-                    <div class="grid grid-cols-3 gap-2 text-[10px] font-mono">
-                        <div class="bg-slate-950/80 p-1 rounded text-center border border-slate-800">
-                            <span class="text-slate-500 block text-[8px]">COXA</span>
-                            <span id="ang-coxa-${i}" class="text-amber-400 font-bold">0°</span>
-                        </div>
-                        <div class="bg-slate-950/80 p-1 rounded text-center border border-slate-800">
-                            <span class="text-slate-500 block text-[8px]">FEMUR</span>
-                            <span id="ang-femur-${i}" class="text-orange-400 font-bold">0°</span>
-                        </div>
-                        <div class="bg-slate-950/80 p-1 rounded text-center border border-slate-800">
-                            <span class="text-slate-500 block text-[8px]">TIBIA</span>
-                            <span id="ang-tibia-${i}" class="text-cyan-400 font-bold">0°</span>
-                        </div>
-                    </div>
-                `;
-                container.appendChild(legCard);
-            }
-        }
+            const currentVel = new THREE.Vector3(0, 0, 0);
+            const currentVelAccel = new THREE.Vector3(0, 0, 0);
+            let currentTurnVel = 0;
+            let currentTurnAccel = 0;
+            let gaitPhase = 0;
+            let avgGroundSupportY = 0;
 
-        // --- 2. THREE.JS SCENE CREATION ---
-        function initScene() {
-            const container = document.getElementById('canvas-container');
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x090d16);
-            scene.fog = new THREE.FogExp2(0x090d16, 0.035);
-
-            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
-            camera.position.set(5, 5, 7);
-
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            renderer.shadowMap.enabled = true;
-            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-            container.appendChild(renderer.domElement);
-
-            controls = new THREE.OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = true;
-            controls.dampingFactor = 0.05;
-            controls.maxPolarAngle = Math.PI / 2 - 0.02;
-            controls.minDistance = 3;
-            controls.maxDistance = 25;
-
-            // Lights
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
-            scene.add(ambientLight);
-
-            const dirLight = new THREE.DirectionalLight(0xffeedd, 1.2);
-            dirLight.position.set(10, 20, -10);
-            dirLight.castShadow = true;
-            dirLight.shadow.mapSize.width = 2048;
-            dirLight.shadow.mapSize.height = 2048;
-            dirLight.shadow.camera.near = 0.5;
-            dirLight.shadow.camera.far = 40;
-            const d = 12;
-            dirLight.shadow.camera.left = -d;
-            dirLight.shadow.camera.right = d;
-            dirLight.shadow.camera.top = d;
-            dirLight.shadow.camera.bottom = -d;
-            scene.add(dirLight);
-
-            const cyanLight = new THREE.PointLight(0x00f0ff, 1.5, 15);
-            cyanLight.position.set(0, 2, 0);
-            scene.add(cyanLight);
-
-            // Ground Grid & Base Floor
-            const floorGeo = new THREE.PlaneGeometry(100, 100);
-            const floorMat = new THREE.MeshStandardMaterial({ color: 0x0c1322, roughness: 0.8, metalness: 0.2 });
-            const floor = new THREE.Mesh(floorGeo, floorMat);
-            floor.rotation.x = -Math.PI / 2;
-            floor.receiveShadow = true;
-            scene.add(floor);
-
-            const grid = new THREE.GridHelper(100, 100, 0xff3b5c, 0x1e293b);
-            grid.position.y = 0.01;
-            scene.add(grid);
-
-            buildRobot();
-            buildTerrain('flat');
-
-            window.addEventListener('resize', onWindowResize);
-        }
-
-        // --- 3. ROBOT MODEL BUILDER (Matching 3D Printed Photo Frame) ---
-        function buildRobot() {
-            hexapodGroup = new THREE.Group();
-            hexapodGroup.position.y = DEFAULT_BODY_HEIGHT;
-            scene.add(hexapodGroup);
-
-            robotBodyGroup = new THREE.Group();
-            hexapodGroup.add(robotBodyGroup);
-
-            // Materials
-            const orangeRedMat = new THREE.MeshStandardMaterial({ color: 0xff3b00, roughness: 0.3, metalness: 0.1 }); // 3D printed body
-            const blackFrameMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.5, metalness: 0.2 });
-            const servoBodyMat = new THREE.MeshStandardMaterial({ color: 0x181818, roughness: 0.3, metalness: 0.5 });
-            const servoLabelMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.4 });
-            const servoHornMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.9, roughness: 0.2 });
-            const batteryMat = new THREE.MeshStandardMaterial({ color: 0x0055ff, roughness: 0.3 });
-            const strapMat = new THREE.MeshStandardMaterial({ color: 0xffcc00, roughness: 0.6 });
-
-            // Dual Deck Chassis (Orange/Red Hexagonal Shape)
-            const bodyShape = new THREE.Shape();
-            const r = 1.7;
-            for (let i = 0; i < 6; i++) {
-                const a = i * Math.PI / 3 + Math.PI / 6;
-                const x = r * Math.cos(a);
-                const y = r * Math.sin(a);
-                if (i === 0) bodyShape.moveTo(x, y);
-                else bodyShape.lineTo(x, y);
-            }
-            bodyShape.closePath();
-
-            // Inner Ventilation Cutouts
-            const hole1 = new THREE.Path(); hole1.absellipse(0, 0.4, 0.4, 0.25, 0, Math.PI*2, false, 0); bodyShape.holes.push(hole1);
-            const hole2 = new THREE.Path(); hole2.absellipse(0, -0.4, 0.4, 0.25, 0, Math.PI*2, false, 0); bodyShape.holes.push(hole2);
-
-            const extrudeSettings = { depth: 0.08, bevelEnabled: true, bevelSegments: 2, steps: 1, bevelSize: 0.03, bevelThickness: 0.03 };
-            const botPlateGeo = new THREE.ExtrudeGeometry(bodyShape, extrudeSettings);
-            botPlateGeo.rotateX(Math.PI / 2);
-
-            const botPlate = new THREE.Mesh(botPlateGeo, orangeRedMat);
-            botPlate.position.y = -0.25;
-            botPlate.castShadow = true;
-            robotBodyGroup.add(botPlate);
-
-            const topPlate = botPlate.clone();
-            topPlate.position.y = 0.25;
-            robotBodyGroup.add(topPlate);
-
-            // Standoff Pillars
-            for (let i = 0; i < 6; i++) {
-                const a = i * Math.PI / 3;
-                const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.5, 8), blackFrameMat);
-                pillar.position.set(Math.cos(a) * 1.25, 0, Math.sin(a) * 1.25);
-                robotBodyGroup.add(pillar);
+            // =========================================================================
+            // 3. CRITICALLY DAMPED 2ND-ORDER SPRING-DAMPER HELPER
+            // =========================================================================
+            function stepCriticallyDamped(current, target, velocity, omega, dt) {
+                const diff = current - target;
+                const exp = Math.exp(-omega * dt);
+                const temp = (velocity + omega * diff) * dt;
+                const newVel = (velocity - omega * temp) * exp;
+                const newVal = target + (diff + temp) * exp;
+                return { value: newVal, velocity: newVel };
             }
 
-            // Central Black Controller Box
-            const ctrlBox = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.4, 1.0), blackFrameMat);
-            ctrlBox.position.set(0, -0.01, 0);
-            robotBodyGroup.add(ctrlBox);
-
-            // Front LEDs (Facing -Z Forward)
-            const ledRed = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), new THREE.MeshBasicMaterial({ color: 0xff0000 }));
-            ledRed.position.set(-0.2, 0, -0.52);
-            robotBodyGroup.add(ledRed);
-            const ledGreen = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), new THREE.MeshBasicMaterial({ color: 0x00ff00 }));
-            ledGreen.position.set(0.2, 0, -0.52);
-            robotBodyGroup.add(ledGreen);
-
-            // Blue LiPo Battery Pack on Top Plate with Yellow Strap
-            const battery = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.32, 0.6), batteryMat);
-            battery.position.set(0, 0.44, 0);
-            battery.castShadow = true;
-            robotBodyGroup.add(battery);
-
-            const strap = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.35, 0.64), strapMat);
-            strap.position.set(0, 0.45, 0);
-            robotBodyGroup.add(strap);
-
-            // Detailed 3-Servo Model Creator Helper
-            function createServoMesh(jointLabel) {
-                const g = new THREE.Group();
-                const b = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.44, 0.36), servoBodyMat);
-                b.castShadow = true; g.add(b);
-
-                // Servo Gold Label Accent
-                const lbl = new THREE.Mesh(new THREE.BoxGeometry(0.37, 0.18, 0.37), servoLabelMat);
-                g.add(lbl);
-
-                // Servo Horn Output Shaft
-                const h = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.08, 12), servoHornMat);
-                h.position.set(0.08, 0.24, 0); g.add(h);
-
-                // Metallic Pivot Pin
-                const pin = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.48, 8), servoHornMat);
-                pin.rotation.z = Math.PI / 2; g.add(pin);
-
-                return g;
+            // Minimum-Jerk Polynomial: 10u^3 - 15u^4 + 6u^5 (C2 continuous horizontal swing)
+            function minimumJerk(u) {
+                const c = THREE.MathUtils.clamp(u, 0, 1);
+                const c3 = c * c * c;
+                return c3 * (10 + c * (-15 + 6 * c));
             }
 
-            // Build 6 Legs with 3 Servos Each (3 Articulated Joints)
-            legs = [];
-            const hipRadius = 1.65;
-            for (let i = 0; i < NUM_LEGS; i++) {
-                const angle = LEG_ANGLES[i];
-                const hipX = Math.cos(angle) * hipRadius;
-                const hipZ = Math.sin(angle) * hipRadius;
+            // C2 Bell-Curve Lift: 16 * u^2 * (1 - u)^2 (zero velocity & smooth accel at touchdown)
+            function c2BellLift(u) {
+                const c = THREE.MathUtils.clamp(u, 0, 1);
+                const v = c * (1 - c);
+                return 16 * v * v;
+            }
 
-                // Root Hip Mount
-                const hipGroup = new THREE.Group();
-                hipGroup.position.set(hipX, 0, hipZ);
-                hipGroup.rotation.y = -angle;
-                robotBodyGroup.add(hipGroup);
+            // =========================================================================
+            // 4. TELEMETRY UI BUILDER
+            // =========================================================================
+            function initTelemetryUI() {
+                const list = document.getElementById('servoTelemetryList');
+                if (!list) return;
+                list.innerHTML = '';
+                for (let i = 0; i < NUM_LEGS; i++) {
+                    const meta = LEG_META[i];
+                    const card = document.createElement('div');
+                    card.className = 'studio-card rounded-xl p-2 space-y-1.5';
+                    card.innerHTML =
+                        '<div class="flex items-center justify-between">' +
+                            '<span class="text-xs font-bold text-slate-200">' +
+                                '<span class="text-red-400 mono-tabular mr-1">' + meta.code + '</span>' +
+                                '<span class="text-slate-300 font-medium text-[11px]">' + meta.name + '</span>' +
+                            '</span>' +
+                            '<span id="leg-phase-' + i + '" class="text-[9px] mono-tabular font-bold px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">' +
+                                'STANCE' +
+                            '</span>' +
+                        '</div>' +
+                        '<div class="grid grid-cols-3 gap-1">' +
+                            '<div class="bg-slate-950/85 rounded-lg p-1.5 border border-slate-800/75">' +
+                                '<div class="flex justify-between text-[9px] text-slate-400">' +
+                                    '<span>COXA</span>' +
+                                    '<span id="deg-coxa-' + i + '" class="mono-tabular text-amber-400 font-bold">0°</span>' +
+                                '</div>' +
+                                '<div class="w-full h-1 bg-slate-800 rounded-full overflow-hidden mt-1">' +
+                                    '<div id="bar-coxa-' + i + '" class="h-full bg-amber-400" style="width: 50%"></div>' +
+                                '</div>' +
+                            '</div>' +
+                            '<div class="bg-slate-950/85 rounded-lg p-1.5 border border-slate-800/75">' +
+                                '<div class="flex justify-between text-[9px] text-slate-400">' +
+                                    '<span>FEMUR</span>' +
+                                    '<span id="deg-femur-' + i + '" class="mono-tabular text-cyan-400 font-bold">12°</span>' +
+                                '</div>' +
+                                '<div class="w-full h-1 bg-slate-800 rounded-full overflow-hidden mt-1">' +
+                                    '<div id="bar-femur-' + i + '" class="h-full bg-cyan-400" style="width: 55%"></div>' +
+                                '</div>' +
+                            '</div>' +
+                            '<div class="bg-slate-950/85 rounded-lg p-1.5 border border-slate-800/75">' +
+                                '<div class="flex justify-between text-[9px] text-slate-400">' +
+                                    '<span>TIBIA</span>' +
+                                    '<span id="deg-tibia-' + i + '" class="mono-tabular text-rose-400 font-bold">-106°</span>' +
+                                '</div>' +
+                                '<div class="w-full h-1 bg-slate-800 rounded-full overflow-hidden mt-1">' +
+                                    '<div id="bar-tibia-' + i + '" class="h-full bg-rose-400" style="width: 30%"></div>' +
+                                '</div>' +
+                            '</div>' +
+                        '</div>';
+                    list.appendChild(card);
+                }
+            }
 
-                // --- SERVO 1: COXA JOINT (Panggul / Rotasi Yaw) ---
-                const coxaGroup = new THREE.Group();
-                hipGroup.add(coxaGroup);
-                const coxaServo = createServoMesh('COXA');
-                coxaGroup.add(coxaServo);
+            // =========================================================================
+            // 5. CROSS-BROWSER CANVAS SPRITE BADGES (arcTo, NO roundRect)
+            // =========================================================================
+            const all3DLabelSprites = [];
 
-                const coxaBracket = new THREE.Mesh(new THREE.BoxGeometry(L_COXA, 0.22, 0.36), blackFrameMat);
-                coxaBracket.position.set(L_COXA / 2, 0, 0);
-                coxaBracket.castShadow = true;
-                coxaGroup.add(coxaBracket);
+            function drawRoundedPath(ctx, x, y, w, h, r) {
+                ctx.beginPath();
+                ctx.moveTo(x + r, y);
+                ctx.arcTo(x + w, y, x + w, y + h, r);
+                ctx.arcTo(x + w, y + h, x, y + h, r);
+                ctx.arcTo(x, y + h, x, y, r);
+                ctx.arcTo(x, y, x + w, y, r);
+                ctx.closePath();
+            }
 
-                // --- SERVO 2: FEMUR JOINT (Paha / Elevasi Pitch) ---
-                const femurGroup = new THREE.Group();
-                femurGroup.position.set(L_COXA, 0, 0);
-                coxaGroup.add(femurGroup);
+            function createBadgeSprite(text, opts) {
+                const options = opts || {};
+                const canvas = document.createElement('canvas');
+                canvas.width = 256;
+                canvas.height = 80;
+                const ctx = canvas.getContext('2d');
 
-                const femurServo = createServoMesh('FEMUR');
-                femurServo.rotation.x = Math.PI / 2;
-                femurGroup.add(femurServo);
+                ctx.fillStyle = options.bgColor || 'rgba(10, 15, 29, 0.90)';
+                drawRoundedPath(ctx, 8, 8, canvas.width - 16, canvas.height - 16, 18);
+                ctx.fill();
 
-                // Double Truss Black Femur Arm
-                const femurPlateTop = new THREE.Mesh(new THREE.BoxGeometry(L_FEMUR, 0.08, 0.28), blackFrameMat);
-                femurPlateTop.position.set(L_FEMUR / 2, 0.14, 0);
-                femurPlateTop.castShadow = true;
-                femurGroup.add(femurPlateTop);
+                ctx.lineWidth = 5;
+                ctx.strokeStyle = options.borderColor || '#ef4444';
+                ctx.stroke();
 
-                const femurPlateBot = femurPlateTop.clone();
-                femurPlateBot.position.y = -0.14;
-                femurGroup.add(femurPlateBot);
+                ctx.fillStyle = options.textColor || '#ffffff';
+                ctx.font = 'bold ' + (options.fontSize || 34) + 'px "JetBrains Mono", monospace';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(text, canvas.width / 2, canvas.height / 2 + 2);
 
-                // --- SERVO 3: TIBIA JOINT (Betis / Tekuk Knee Pitch) ---
-                const tibiaGroup = new THREE.Group();
-                tibiaGroup.position.set(L_FEMUR, 0, 0);
-                femurGroup.add(tibiaGroup);
+                const texture = new THREE.CanvasTexture(canvas);
+                texture.minFilter = THREE.LinearFilter;
+                const material = new THREE.SpriteMaterial({
+                    map: texture,
+                    transparent: true,
+                    depthTest: false
+                });
+                const sprite = new THREE.Sprite(material);
+                sprite.scale.set(options.scaleX || 0.72, options.scaleY || 0.23, 1);
+                sprite.renderOrder = 999;
+                all3DLabelSprites.push(sprite);
+                return sprite;
+            }
 
-                const tibiaServo = createServoMesh('TIBIA');
-                tibiaServo.rotation.x = Math.PI / 2;
-                tibiaGroup.add(tibiaServo);
+            // =========================================================================
+            // 6. THREE.JS SCENE, RENDERERS & BUILT-IN SPHERICAL CAMERA FALLBACK
+            // =========================================================================
+            let scene, camera, renderer, fpvRenderer, controls;
+            let fallbackCamState = null;
 
-                // Curved Blade Tibia (Origin (0,0) is knee joint, Tip is at (L_TIBIA, 0))
-                const tibiaShape = new THREE.Shape();
-                tibiaShape.moveTo(0, 0.12);
-                tibiaShape.quadraticCurveTo(L_TIBIA * 0.4, 0.35, L_TIBIA * 0.75, 0.2);
-                tibiaShape.lineTo(L_TIBIA, 0); // Exact foot tip anchor
-                tibiaShape.quadraticCurveTo(L_TIBIA * 0.5, -0.15, 0, -0.12);
-                tibiaShape.closePath();
+            let groundMesh, terrainGroup, terrainColliders;
+            let hexapodRoot, robotBodyGroup;
+            let chassisMat, footBladeMat, blackFrameMat, servoBodyMat, servoLabelMat, metalHornMat;
+            let batteryMesh, strapMesh;
+            let frontCenterMount, fixedNeckPedestal, topHeadTurretMount, headServoGroup, headPanGroup, headLabelSprite;
+            let ultrasonicSensorGroup, sonarWaveRing, sonarWaveRing2;
+            let espCamSensorGroup, espCamCamera, espFlashLight, espFlashBulbMat, espFovCone;
+            const legs = [];
 
-                const tibiaExtrude = { depth: 0.08, bevelEnabled: true, bevelSize: 0.015, bevelThickness: 0.015, steps: 1 };
-                const tibiaGeo = new THREE.ExtrudeGeometry(tibiaShape, tibiaExtrude);
-                tibiaGeo.translate(0, 0, -0.04); // Center extrusion thickness around Z=0
+            function setupThreeScene() {
+                const container = document.getElementById('canvas-container');
+                scene = new THREE.Scene();
+                scene.background = new THREE.Color(0x060913);
+                scene.fog = new THREE.FogExp2(0x060913, 0.019);
 
-                const tibiaMesh = new THREE.Mesh(tibiaGeo, orangeRedMat);
-                tibiaMesh.castShadow = true;
-                tibiaGroup.add(tibiaMesh);
+                camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 160);
+                camera.position.set(6.4, 5.1, 7.6);
 
-                // Tip Anchor Marker
-                const footTip = new THREE.Group();
-                footTip.position.set(L_TIBIA, 0, 0); // Exact tip location matching IK math
-                tibiaGroup.add(footTip);
+                renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+                renderer.shadowMap.enabled = true;
+                renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                container.appendChild(renderer.domElement);
 
-                // Calculate Home Position in Local & World Coordinates
-                const homeR = NEUTRAL_FOOT_R;
-                const homeX_local = homeR;
-                const homeZ_local = 0;
-                const homeY_local = NEUTRAL_FOOT_Y;
-                const homePosLocal = new THREE.Vector3(homeX_local, homeY_local, homeZ_local);
+                // Secondary FPV Renderer for ESP32-CAM
+                const fpvCanvas = document.getElementById('fpvCanvas');
+                fpvRenderer = new THREE.WebGLRenderer({ canvas: fpvCanvas, antialias: true });
+                fpvRenderer.setSize(256, 160, false);
 
-                legs.push({
-                    id: i,
-                    hipGroup, coxaGroup, femurGroup, tibiaGroup, footTip,
-                    homePosLocal,
-                    currentFootPosWorld: new THREE.Vector3(),
-                    targetFootPosWorld: new THREE.Vector3(),
-                    liftOffPosWorld: new THREE.Vector3(),
-                    angles: { coxa: 0, femur: 0, tibia: 0 },
-                    isStance: true
+                if (typeof THREE.OrbitControls === 'function') {
+                    controls = new THREE.OrbitControls(camera, renderer.domElement);
+                    controls.enableDamping = true;
+                    controls.dampingFactor = 0.06;
+                    controls.maxPolarAngle = Math.PI / 2 - 0.03;
+                    controls.minDistance = 3.2;
+                    controls.maxDistance = 26;
+                    controls.target.set(0, 1.5, 0);
+                } else {
+                    // Built-in Spherical Camera Orbit/Zoom/Pan Fallback
+                    setupFallbackCameraController(renderer.domElement);
+                }
+
+                // Studio Three-Point & Hemisphere Lighting
+                const ambientLight = new THREE.AmbientLight(0x94a3b8, 0.72);
+                scene.add(ambientLight);
+
+                const hemiLight = new THREE.HemisphereLight(0x38bdf8, 0x0f172a, 0.58);
+                scene.add(hemiLight);
+
+                const dirLight = new THREE.DirectionalLight(0xffffff, 1.18);
+                dirLight.position.set(11, 20, 13);
+                dirLight.castShadow = true;
+                dirLight.shadow.mapSize.width = 2048;
+                dirLight.shadow.mapSize.height = 2048;
+                dirLight.shadow.camera.near = 1;
+                dirLight.shadow.camera.far = 60;
+                const dShadow = 18;
+                dirLight.shadow.camera.left = -dShadow;
+                dirLight.shadow.camera.right = dShadow;
+                dirLight.shadow.camera.top = dShadow;
+                dirLight.shadow.camera.bottom = -dShadow;
+                dirLight.shadow.bias = -0.0005;
+                scene.add(dirLight);
+
+                // Ground Plane & Grid
+                const groundGeo = new THREE.PlaneGeometry(160, 160);
+                const groundMat = new THREE.MeshStandardMaterial({
+                    color: 0x080d1a,
+                    roughness: 0.85,
+                    metalness: 0.15
+                });
+                groundMesh = new THREE.Mesh(groundGeo, groundMat);
+                groundMesh.rotation.x = -Math.PI / 2;
+                groundMesh.receiveShadow = true;
+                scene.add(groundMesh);
+
+                const gridHelper = new THREE.GridHelper(160, 80, 0xef4444, 0x1e293b);
+                gridHelper.position.y = 0.005;
+                gridHelper.material.opacity = 0.34;
+                gridHelper.material.transparent = true;
+                scene.add(gridHelper);
+
+                terrainGroup = new THREE.Group();
+                scene.add(terrainGroup);
+                terrainColliders = [groundMesh];
+            }
+
+            function setupFallbackCameraController(domEl) {
+                const target = new THREE.Vector3(0, 1.5, 0);
+                const offset = camera.position.clone().sub(target);
+                const spherical = new THREE.Spherical().setFromVector3(offset);
+                let isDragging = false;
+                let prevX = 0;
+                let prevY = 0;
+
+                fallbackCamState = {
+                    target: target,
+                    spherical: spherical,
+                    update: function() {
+                        spherical.phi = THREE.MathUtils.clamp(spherical.phi, 0.15, Math.PI / 2 - 0.04);
+                        spherical.radius = THREE.MathUtils.clamp(spherical.radius, 3.2, 26);
+                        offset.setFromSpherical(spherical);
+                        camera.position.copy(target).add(offset);
+                        camera.lookAt(target);
+                    }
+                };
+
+                domEl.addEventListener('pointerdown', function(e) {
+                    isDragging = true;
+                    prevX = e.clientX;
+                    prevY = e.clientY;
+                });
+                window.addEventListener('pointermove', function(e) {
+                    if (!isDragging) return;
+                    const dx = e.clientX - prevX;
+                    const dy = e.clientY - prevY;
+                    prevX = e.clientX;
+                    prevY = e.clientY;
+                    spherical.theta -= dx * 0.007;
+                    spherical.phi -= dy * 0.007;
+                });
+                window.addEventListener('pointerup', function() {
+                    isDragging = false;
+                });
+                domEl.addEventListener('wheel', function(e) {
+                    e.preventDefault();
+                    spherical.radius += e.deltaY * 0.008;
+                }, { passive: false });
+            }
+
+            window.resetCameraView = function() {
+                const baseTarget = new THREE.Vector3(hexapodRoot.position.x, 1.5, hexapodRoot.position.z);
+                const offset = new THREE.Vector3(6.4, 3.6, 7.6);
+                camera.position.copy(baseTarget).add(offset);
+                if (controls) {
+                    controls.target.copy(baseTarget);
+                    controls.update();
+                } else if (fallbackCamState) {
+                    fallbackCamState.target.copy(baseTarget);
+                    fallbackCamState.spherical.setFromVector3(offset);
+                    fallbackCamState.update();
+                }
+            };
+
+            // =========================================================================
+            // 7. TERRAIN OBSTACLES & RAYCAST HEIGHT DETECTOR
+            // =========================================================================
+            function buildTerrain(type) {
+                while (terrainGroup.children.length > 0) {
+                    terrainGroup.remove(terrainGroup.children[0]);
+                }
+                terrainColliders = [groundMesh];
+
+                const obstacleMat = new THREE.MeshStandardMaterial({
+                    color: 0x1e293b,
+                    roughness: 0.62,
+                    metalness: 0.28
+                });
+                const trimMat = new THREE.MeshStandardMaterial({
+                    color: 0xf59e0b,
+                    roughness: 0.4,
+                    metalness: 0.5
+                });
+
+                if (type === 'blocks') {
+                    const specs = [
+                        { x: 0, z: -5.2, w: 3.8, h: 0.36, d: 2.2 },
+                        { x: 0, z: -7.8, w: 4.2, h: 0.68, d: 2.4 },
+                        { x: 0, z: -10.6, w: 4.2, h: 0.36, d: 2.4 },
+                        { x: -3.8, z: -6.5, w: 2.4, h: 0.45, d: 2.4 },
+                        { x: 3.8, z: -6.5, w: 2.4, h: 0.45, d: 2.4 }
+                    ];
+                    specs.forEach(function(b) {
+                        const mesh = new THREE.Mesh(new THREE.BoxGeometry(b.w, b.h, b.d), obstacleMat);
+                        mesh.position.set(b.x, b.h / 2, b.z);
+                        mesh.castShadow = true;
+                        mesh.receiveShadow = true;
+                        terrainGroup.add(mesh);
+                        terrainColliders.push(mesh);
+
+                        const trim = new THREE.Mesh(new THREE.BoxGeometry(b.w + 0.04, 0.05, b.d + 0.04), trimMat);
+                        trim.position.set(b.x, b.h, b.z);
+                        terrainGroup.add(trim);
+                    });
+                } else if (type === 'boulders') {
+                    const rocks = [
+                        { x: -1.6, z: -4.6, r: 0.70 },
+                        { x: 1.7, z: -5.4, r: 0.80 },
+                        { x: -0.7, z: -7.4, r: 0.85 },
+                        { x: 2.0, z: -8.8, r: 0.70 },
+                        { x: -2.3, z: -9.2, r: 0.76 },
+                        { x: 0.2, z: -11.2, r: 0.90 }
+                    ];
+                    rocks.forEach(function(rk) {
+                        const geo = new THREE.DodecahedronGeometry(rk.r, 1);
+                        geo.scale(1.35, 0.52, 1.25);
+                        const rock = new THREE.Mesh(geo, obstacleMat);
+                        rock.position.set(rk.x, rk.r * 0.26, rk.z);
+                        rock.castShadow = true;
+                        rock.receiveShadow = true;
+                        terrainGroup.add(rock);
+                        terrainColliders.push(rock);
+                    });
+                } else if (type === 'ramp') {
+                    const rampGeo = new THREE.BoxGeometry(4.8, 0.26, 4.4);
+                    const rampUp = new THREE.Mesh(rampGeo, obstacleMat);
+                    rampUp.position.set(0, 0.38, -5.6);
+                    rampUp.rotation.x = 0.19;
+                    rampUp.castShadow = true;
+                    rampUp.receiveShadow = true;
+                    terrainGroup.add(rampUp);
+                    terrainColliders.push(rampUp);
+
+                    const topDeck = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.26, 3.2), obstacleMat);
+                    topDeck.position.set(0, 0.78, -9.2);
+                    topDeck.castShadow = true;
+                    topDeck.receiveShadow = true;
+                    terrainGroup.add(topDeck);
+                    terrainColliders.push(topDeck);
+
+                    const rampDown = new THREE.Mesh(rampGeo, obstacleMat);
+                    rampDown.position.set(0, 0.38, -12.8);
+                    rampDown.rotation.x = -0.19;
+                    rampDown.castShadow = true;
+                    rampDown.receiveShadow = true;
+                    terrainGroup.add(rampDown);
+                    terrainColliders.push(rampDown);
+                }
+            }
+
+            const downRaycaster = new THREE.Raycaster();
+            const downDir = new THREE.Vector3(0, -1, 0);
+            const rayOrigin = new THREE.Vector3();
+
+            function getTerrainHeightAt(worldX, worldZ) {
+                if (currentTerrain === 'flat') return 0;
+                rayOrigin.set(worldX, 9.0, worldZ);
+                downRaycaster.set(rayOrigin, downDir);
+                const hits = downRaycaster.intersectObjects(terrainColliders, false);
+                if (hits.length > 0) {
+                    return Math.max(0, hits[0].point.y);
+                }
+                return 0;
+            }
+
+            // =========================================================================
+            // 8. 3D HEXAPOD MODEL BUILDER (4 VARIANTS, 6 LEGS x 3 SERVOS + 3D LABELS)
+            // =========================================================================
+            function createServoAssembly() {
+                const grp = new THREE.Group();
+                const body = new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.46, 0.36), servoBodyMat);
+                body.castShadow = true;
+                grp.add(body);
+
+                const labelBand = new THREE.Mesh(new THREE.BoxGeometry(0.41, 0.16, 0.37), servoLabelMat);
+                grp.add(labelBand);
+
+                const mountFlange = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.05, 0.36), servoBodyMat);
+                mountFlange.position.y = 0.08;
+                grp.add(mountFlange);
+
+                const horn = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.09, 18), metalHornMat);
+                horn.position.set(0.08, 0.25, 0);
+                grp.add(horn);
+                return grp;
+            }
+
+            function createCurvedTibiaMesh() {
+                const shape = new THREE.Shape();
+                shape.moveTo(0, 0.19);
+                shape.lineTo(0.36, 0.24);
+                shape.quadraticCurveTo(L_TIBIA * 0.56, 0.18, L_TIBIA, 0.02);
+                shape.lineTo(L_TIBIA, -0.02);
+                shape.quadraticCurveTo(L_TIBIA * 0.48, -0.20, 0.18, -0.17);
+                shape.lineTo(0, -0.13);
+                shape.closePath();
+
+                const cutout = new THREE.Path();
+                cutout.moveTo(0.48, 0.07);
+                cutout.lineTo(L_TIBIA * 0.66, 0.02);
+                cutout.lineTo(0.48, -0.07);
+                cutout.closePath();
+                shape.holes.push(cutout);
+
+                const extrudeGeo = new THREE.ExtrudeGeometry(shape, {
+                    depth: 0.13,
+                    bevelEnabled: true,
+                    bevelSegments: 2,
+                    steps: 1,
+                    bevelSize: 0.02,
+                    bevelThickness: 0.02
+                });
+                extrudeGeo.translate(0, 0, -0.065);
+                const mesh = new THREE.Mesh(extrudeGeo, footBladeMat);
+                mesh.castShadow = true;
+                return mesh;
+            }
+
+            function buildHexapodModel() {
+                hexapodRoot = new THREE.Group();
+                scene.add(hexapodRoot);
+
+                robotBodyGroup = new THREE.Group();
+                hexapodRoot.add(robotBodyGroup);
+
+                chassisMat = new THREE.MeshStandardMaterial({ color: 0xee3b2b, roughness: 0.38, metalness: 0.15 });
+                footBladeMat = new THREE.MeshStandardMaterial({ color: 0xee3b2b, roughness: 0.42, metalness: 0.12 });
+                blackFrameMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.52, metalness: 0.25 });
+                servoBodyMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.32, metalness: 0.48 });
+                servoLabelMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.42 });
+                metalHornMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.18, metalness: 0.92 });
+
+                const batteryBlueMat = new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.30, metalness: 0.10 });
+                const strapYellowMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.72 });
+                const pcbBlueMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.35, metalness: 0.30 });
+                const pcbDarkMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.40, metalness: 0.50 });
+                const lensGlassMat = new THREE.MeshStandardMaterial({ color: 0x020617, roughness: 0.08, metalness: 0.95 });
+                const ledRedMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+                const ledGreenMat = new THREE.MeshBasicMaterial({ color: 0x22c55e });
+
+                // Dual-Deck Hexagonal 3D-Printed Chassis
+                const hexShape = new THREE.Shape();
+                const r = 1.72;
+                for (let i = 0; i < 6; i++) {
+                    const a = (i * Math.PI) / 3 + Math.PI / 6;
+                    const x = Math.cos(a) * r;
+                    const y = Math.sin(a) * r;
+                    if (i === 0) hexShape.moveTo(x, y);
+                    else hexShape.lineTo(x, y);
+                }
+                hexShape.closePath();
+
+                const slot1 = new THREE.Path();
+                slot1.absellipse(0, 0.46, 0.50, 0.20, 0, Math.PI * 2, false, 0);
+                hexShape.holes.push(slot1);
+
+                const slot2 = new THREE.Path();
+                slot2.absellipse(0, -0.46, 0.50, 0.20, 0, Math.PI * 2, false, 0);
+                hexShape.holes.push(slot2);
+
+                const plateGeo = new THREE.ExtrudeGeometry(hexShape, {
+                    depth: 0.09,
+                    bevelEnabled: true,
+                    bevelSegments: 2,
+                    steps: 1,
+                    bevelSize: 0.03,
+                    bevelThickness: 0.03
+                });
+                plateGeo.rotateX(Math.PI / 2);
+
+                const bottomPlate = new THREE.Mesh(plateGeo, chassisMat);
+                bottomPlate.position.y = -0.24;
+                bottomPlate.castShadow = true;
+                bottomPlate.receiveShadow = true;
+                robotBodyGroup.add(bottomPlate);
+
+                const topPlate = new THREE.Mesh(plateGeo, chassisMat);
+                topPlate.position.y = 0.26;
+                topPlate.castShadow = true;
+                topPlate.receiveShadow = true;
+                robotBodyGroup.add(topPlate);
+
+                // Black Standoff Pillars
+                for (let i = 0; i < 6; i++) {
+                    const a = (i * Math.PI) / 3;
+                    const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.068, 0.068, 0.48, 12), blackFrameMat);
+                    pillar.position.set(Math.cos(a) * 1.20, 0, Math.sin(a) * 1.20);
+                    robotBodyGroup.add(pillar);
+                }
+
+                // Central Electronics Controller Box + Red & Green Front Status LEDs
+                const ctrlBox = new THREE.Mesh(new THREE.BoxGeometry(1.28, 0.38, 1.38), blackFrameMat);
+                ctrlBox.position.set(0, 0, 0.06);
+                ctrlBox.castShadow = true;
+                robotBodyGroup.add(ctrlBox);
+
+                const redLed = new THREE.Mesh(new THREE.SphereGeometry(0.048, 12, 12), ledRedMat);
+                redLed.position.set(-0.22, 0.02, -0.64);
+                robotBodyGroup.add(redLed);
+
+                const greenLed = new THREE.Mesh(new THREE.SphereGeometry(0.048, 12, 12), ledGreenMat);
+                greenLed.position.set(0.22, 0.02, -0.64);
+                robotBodyGroup.add(greenLed);
+
+                // Blue LiPo Battery Pack + Yellow Velcro Strap
+                batteryMesh = new THREE.Mesh(new THREE.BoxGeometry(0.96, 0.33, 1.18), batteryBlueMat);
+                batteryMesh.position.set(0, 0.45, 0);
+                batteryMesh.castShadow = true;
+                robotBodyGroup.add(batteryMesh);
+
+                strapMesh = new THREE.Mesh(new THREE.BoxGeometry(1.04, 0.37, 0.28), strapYellowMat);
+                strapMesh.position.set(0, 0.46, 0);
+                robotBodyGroup.add(strapMesh);
+
+                // 18-Servo Front-Center Sensor Mount
+                frontCenterMount = new THREE.Group();
+                frontCenterMount.position.set(0, -0.01, -1.44);
+                robotBodyGroup.add(frontCenterMount);
+
+                const centerBridge = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.30, 0.56), blackFrameMat);
+                centerBridge.position.set(0, 0, 0.24);
+                centerBridge.castShadow = true;
+                frontCenterMount.add(centerBridge);
+
+                fixedNeckPedestal = new THREE.Group();
+                frontCenterMount.add(fixedNeckPedestal);
+
+                const fixedRiser = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.28, 0.36), blackFrameMat);
+                fixedRiser.position.set(0, 0, -0.10);
+                fixedRiser.castShadow = true;
+                fixedNeckPedestal.add(fixedRiser);
+
+                // 19-Servo Top-Deck Turret Mount (For "+ Head" Variants)
+                topHeadTurretMount = new THREE.Group();
+                topHeadTurretMount.position.set(0, 0.30, -0.88);
+                topHeadTurretMount.visible = false;
+                robotBodyGroup.add(topHeadTurretMount);
+
+                const topTurretBase = new THREE.Mesh(new THREE.BoxGeometry(0.70, 0.08, 0.70), blackFrameMat);
+                topTurretBase.position.set(0, 0.04, 0);
+                topTurretBase.castShadow = true;
+                topHeadTurretMount.add(topTurretBase);
+
+                headServoGroup = new THREE.Group();
+                headServoGroup.position.set(0, 0.29, 0.04);
+                topHeadTurretMount.add(headServoGroup);
+
+                const headServoMesh = createServoAssembly();
+                headServoMesh.rotation.y = Math.PI / 2;
+                headServoMesh.scale.set(0.92, 0.92, 0.92);
+                headServoGroup.add(headServoMesh);
+
+                // Panning Head Group
+                headPanGroup = new THREE.Group();
+                headPanGroup.position.set(0, 0, -0.34);
+                frontCenterMount.add(headPanGroup);
+
+                const neckCollar = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.28, 0.26), blackFrameMat);
+                neckCollar.position.set(0, 0, 0.08);
+                neckCollar.castShadow = true;
+                headPanGroup.add(neckCollar);
+
+                headLabelSprite = createBadgeSprite('S19 • HEAD', {
+                    bgColor: 'rgba(30, 10, 50, 0.92)',
+                    borderColor: '#a855f7',
+                    textColor: '#e9d5ff',
+                    fontSize: 28,
+                    scaleX: 0.88,
+                    scaleY: 0.26
+                });
+                headLabelSprite.position.set(0, 0.58, 0);
+                headLabelSprite.visible = false;
+                headPanGroup.add(headLabelSprite);
+
+                // Sensor Module A: HC-SR04 Ultrasonic
+                ultrasonicSensorGroup = new THREE.Group();
+                ultrasonicSensorGroup.position.set(0, 0.02, 0);
+                headPanGroup.add(ultrasonicSensorGroup);
+
+                const usPcb = new THREE.Mesh(new THREE.BoxGeometry(0.94, 0.38, 0.06), pcbBlueMat);
+                usPcb.castShadow = true;
+                ultrasonicSensorGroup.add(usPcb);
+
+                const crystal = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.08, 0.06), metalHornMat);
+                crystal.position.set(0, 0.12, -0.04);
+                ultrasonicSensorGroup.add(crystal);
+
+                [-0.26, 0.26].forEach(function(xOff) {
+                    const cyl = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.22, 20), metalHornMat);
+                    cyl.rotation.x = Math.PI / 2;
+                    cyl.position.set(xOff, 0, -0.12);
+                    cyl.castShadow = true;
+                    ultrasonicSensorGroup.add(cyl);
+
+                    const core = new THREE.Mesh(new THREE.CylinderGeometry(0.115, 0.115, 0.23, 16), pcbDarkMat);
+                    core.rotation.x = Math.PI / 2;
+                    core.position.set(xOff, 0, -0.125);
+                    ultrasonicSensorGroup.add(core);
+                });
+
+                const waveGeo = new THREE.RingGeometry(0.18, 0.24, 24);
+                const waveMat = new THREE.MeshBasicMaterial({
+                    color: 0x22d3ee,
+                    side: THREE.DoubleSide,
+                    transparent: true,
+                    opacity: 0.65
+                });
+                sonarWaveRing = new THREE.Mesh(waveGeo, waveMat);
+                sonarWaveRing.position.set(0, 0, -0.35);
+                ultrasonicSensorGroup.add(sonarWaveRing);
+
+                sonarWaveRing2 = new THREE.Mesh(waveGeo.clone(), waveMat.clone());
+                sonarWaveRing2.position.set(0, 0, -0.65);
+                ultrasonicSensorGroup.add(sonarWaveRing2);
+
+                // Sensor Module B: AI-Thinker ESP32-CAM OV2640
+                espCamSensorGroup = new THREE.Group();
+                espCamSensorGroup.position.set(0, 0.02, 0);
+                espCamSensorGroup.visible = false;
+                headPanGroup.add(espCamSensorGroup);
+
+                const camPcb = new THREE.Mesh(new THREE.BoxGeometry(0.78, 0.48, 0.06), pcbDarkMat);
+                camPcb.castShadow = true;
+                espCamSensorGroup.add(camPcb);
+
+                const rfShield = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.36, 0.05), metalHornMat);
+                rfShield.position.set(0.12, 0, 0.04);
+                espCamSensorGroup.add(rfShield);
+
+                const camHolder = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.26, 0.14), servoBodyMat);
+                camHolder.position.set(-0.14, 0.04, -0.08);
+                espCamSensorGroup.add(camHolder);
+
+                const lensBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.11, 0.14, 20), servoBodyMat);
+                lensBarrel.rotation.x = Math.PI / 2;
+                lensBarrel.position.set(-0.14, 0.04, -0.16);
+                espCamSensorGroup.add(lensBarrel);
+
+                const lensGlass = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.15, 16), lensGlassMat);
+                lensGlass.rotation.x = Math.PI / 2;
+                lensGlass.position.set(-0.14, 0.04, -0.165);
+                espCamSensorGroup.add(lensGlass);
+
+                espFlashBulbMat = new THREE.MeshBasicMaterial({ color: 0x64748b });
+                const flashLed = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.10, 0.04), espFlashBulbMat);
+                flashLed.position.set(0.22, 0.10, -0.04);
+                espCamSensorGroup.add(flashLed);
+
+                espFlashLight = new THREE.SpotLight(0xfffbeb, 0, 16, Math.PI / 4, 0.45, 1);
+                espFlashLight.position.set(0.22, 0.10, -0.10);
+                const flashTarget = new THREE.Object3D();
+                flashTarget.position.set(0, -1.2, -5.2);
+                espCamSensorGroup.add(flashTarget);
+                espFlashLight.target = flashTarget;
+                espCamSensorGroup.add(espFlashLight);
+
+                const fovGeo = new THREE.ConeGeometry(1.15, 2.6, 20, 1, true);
+                fovGeo.rotateX(Math.PI / 2);
+                const fovMat = new THREE.MeshBasicMaterial({
+                    color: 0x22d3ee,
+                    transparent: true,
+                    opacity: 0.08,
+                    side: THREE.DoubleSide,
+                    depthWrite: false
+                });
+                espFovCone = new THREE.Mesh(fovGeo, fovMat);
+                espFovCone.position.set(-0.14, 0.04, -1.48);
+                espCamSensorGroup.add(espFovCone);
+
+                espCamCamera = new THREE.PerspectiveCamera(62, 1.6, 0.22, 70);
+                espCamCamera.position.set(-0.14, 0.06, -0.26);
+                espCamCamera.rotation.x = -0.06;
+                espCamSensorGroup.add(espCamCamera);
+
+                // Build 6 Legs (L1-L6, each with COXA, FEMUR, TIBIA servos & 3D labels)
+                for (let i = 0; i < NUM_LEGS; i++) {
+                    const angle = LEG_ANGLES[i];
+                    const hipX = Math.cos(angle) * HIP_RADIUS;
+                    const hipZ = Math.sin(angle) * HIP_RADIUS;
+
+                    const hipMount = new THREE.Group();
+                    hipMount.position.set(hipX, 0.02, hipZ);
+                    hipMount.rotation.y = -angle;
+                    robotBodyGroup.add(hipMount);
+
+                    // Leg ID Badge (L1 - L6)
+                    const legBadge = createBadgeSprite(LEG_META[i].code, {
+                        bgColor: 'rgba(127, 29, 29, 0.92)',
+                        borderColor: '#f87171',
+                        textColor: '#ffffff',
+                        fontSize: 36,
+                        scaleX: 0.54,
+                        scaleY: 0.22
+                    });
+                    legBadge.position.set(0.15, 0.88, 0);
+                    hipMount.add(legBadge);
+
+                    // 1. COXA JOINT
+                    const coxaGroup = new THREE.Group();
+                    hipMount.add(coxaGroup);
+
+                    const coxaServo = createServoAssembly();
+                    coxaGroup.add(coxaServo);
+
+                    const coxaBracket = new THREE.Mesh(new THREE.BoxGeometry(L_COXA, 0.19, 0.34), blackFrameMat);
+                    coxaBracket.position.set(L_COXA / 2, 0, 0);
+                    coxaBracket.castShadow = true;
+                    coxaGroup.add(coxaBracket);
+
+                    const coxaLabel = createBadgeSprite('COXA', {
+                        bgColor: 'rgba(15, 23, 42, 0.90)',
+                        borderColor: '#f59e0b',
+                        textColor: '#fde68a',
+                        fontSize: 26,
+                        scaleX: 0.58,
+                        scaleY: 0.18
+                    });
+                    coxaLabel.position.set(0.12, 0.46, 0);
+                    coxaGroup.add(coxaLabel);
+
+                    // 2. FEMUR JOINT
+                    const femurGroup = new THREE.Group();
+                    femurGroup.position.set(L_COXA, 0, 0);
+                    coxaGroup.add(femurGroup);
+
+                    const femurServo = createServoAssembly();
+                    femurServo.rotation.x = Math.PI / 2;
+                    femurGroup.add(femurServo);
+
+                    const femurTopPlate = new THREE.Mesh(new THREE.BoxGeometry(L_FEMUR, 0.08, 0.36), blackFrameMat);
+                    femurTopPlate.position.set(L_FEMUR / 2, 0.14, 0);
+                    femurTopPlate.castShadow = true;
+                    femurGroup.add(femurTopPlate);
+
+                    const femurBotPlate = new THREE.Mesh(new THREE.BoxGeometry(L_FEMUR, 0.08, 0.36), blackFrameMat);
+                    femurBotPlate.position.set(L_FEMUR / 2, -0.14, 0);
+                    femurBotPlate.castShadow = true;
+                    femurGroup.add(femurBotPlate);
+
+                    const femurLabel = createBadgeSprite('FEMUR', {
+                        bgColor: 'rgba(15, 23, 42, 0.90)',
+                        borderColor: '#22d3ee',
+                        textColor: '#cffafe',
+                        fontSize: 26,
+                        scaleX: 0.64,
+                        scaleY: 0.18
+                    });
+                    femurLabel.position.set(0.18, 0.50, 0);
+                    femurGroup.add(femurLabel);
+
+                    // 3. TIBIA JOINT
+                    const tibiaGroup = new THREE.Group();
+                    tibiaGroup.position.set(L_FEMUR, 0, 0);
+                    femurGroup.add(tibiaGroup);
+
+                    const tibiaServo = createServoAssembly();
+                    tibiaServo.rotation.x = Math.PI / 2;
+                    tibiaGroup.add(tibiaServo);
+
+                    const tibiaBlade = createCurvedTibiaMesh();
+                    tibiaGroup.add(tibiaBlade);
+
+                    const tibiaLabel = createBadgeSprite('TIBIA', {
+                        bgColor: 'rgba(15, 23, 42, 0.90)',
+                        borderColor: '#fb7185',
+                        textColor: '#ffe4e6',
+                        fontSize: 26,
+                        scaleX: 0.60,
+                        scaleY: 0.18
+                    });
+                    tibiaLabel.position.set(0.28, 0.46, 0);
+                    tibiaGroup.add(tibiaLabel);
+
+                    // Ground Contact Ring
+                    const rippleRing = new THREE.Mesh(
+                        new THREE.RingGeometry(0.11, 0.21, 20),
+                        new THREE.MeshBasicMaterial({ color: 0xef4444, side: THREE.DoubleSide, transparent: true, opacity: 0.50 })
+                    );
+                    rippleRing.rotation.x = -Math.PI / 2;
+                    scene.add(rippleRing);
+
+                    const homeBodyPos = new THREE.Vector3(
+                        Math.cos(angle) * NEUTRAL_RADIAL_DIST,
+                        0,
+                        Math.sin(angle) * NEUTRAL_RADIAL_DIST
+                    );
+
+                    legs.push({
+                        index: i,
+                        angle: angle,
+                        hipMount: hipMount,
+                        coxaGroup: coxaGroup,
+                        femurGroup: femurGroup,
+                        tibiaGroup: tibiaGroup,
+                        rippleRing: rippleRing,
+                        homeBodyPos: homeBodyPos,
+                        plantedWorldPos: homeBodyPos.clone(),
+                        liftoffWorldPos: homeBodyPos.clone(),
+                        wasSwinging: false,
+                        settlingProgress: 1.0,
+                        settleDelay: (i % 2) * 0.12,
+                        settleDelayTimer: 0,
+                        currentAngles: { coxa: 0, femur: 0.21, tibia: -1.84 },
+                        angleVelocities: { coxa: 0, femur: 0, tibia: 0 }
+                    });
+                }
+            }
+
+            // =========================================================================
+            // 9. ANALYTICAL 3-DOF INVERSE KINEMATICS SOLVER
+            // =========================================================================
+            const localFootVec = new THREE.Vector3();
+
+            function solveLegIK(leg, worldFootTarget, dt) {
+                localFootVec.copy(worldFootTarget);
+                leg.hipMount.worldToLocal(localFootVec);
+
+                // 1. Coxa Yaw Angle
+                const coxaAngle = Math.atan2(-localFootVec.z, localFootVec.x);
+
+                // 2. Planar Reach from Femur Pivot to Foot Tip
+                const horizDist = Math.sqrt(localFootVec.x * localFootVec.x + localFootVec.z * localFootVec.z) - L_COXA;
+                const vertDist = localFootVec.y;
+
+                const maxReach = (L_FEMUR + L_TIBIA) * 0.985;
+                const minReach = Math.abs(L_TIBIA - L_FEMUR) + 0.08;
+                let D = Math.sqrt(horizDist * horizDist + vertDist * vertDist);
+                D = THREE.MathUtils.clamp(D, minReach, maxReach);
+
+                // 3. Law of Cosines for Femur & Tibia
+                const alpha1 = Math.atan2(vertDist, Math.max(0.001, horizDist));
+                const cosAlpha2 = THREE.MathUtils.clamp(
+                    (L_FEMUR * L_FEMUR + D * D - L_TIBIA * L_TIBIA) / (2 * L_FEMUR * D),
+                    -1, 1
+                );
+                const alpha2 = Math.acos(cosAlpha2);
+                const femurAngle = alpha1 + alpha2;
+
+                const cosBeta = THREE.MathUtils.clamp(
+                    (L_FEMUR * L_FEMUR + L_TIBIA * L_TIBIA - D * D) / (2 * L_FEMUR * L_TIBIA),
+                    -1, 1
+                );
+                const beta = Math.acos(cosBeta);
+                const tibiaAngle = -(Math.PI - beta);
+
+                // Critically damped 2nd-order servo filter (ultra-smooth, zero overshoot)
+                const servoOmega = 42.0;
+                const resC = stepCriticallyDamped(leg.currentAngles.coxa, coxaAngle, leg.angleVelocities.coxa, servoOmega, dt);
+                const resF = stepCriticallyDamped(leg.currentAngles.femur, femurAngle, leg.angleVelocities.femur, servoOmega, dt);
+                const resT = stepCriticallyDamped(leg.currentAngles.tibia, tibiaAngle, leg.angleVelocities.tibia, servoOmega, dt);
+
+                leg.currentAngles.coxa = resC.value;
+                leg.angleVelocities.coxa = resC.velocity;
+                leg.currentAngles.femur = resF.value;
+                leg.angleVelocities.femur = resF.velocity;
+                leg.currentAngles.tibia = resT.value;
+                leg.angleVelocities.tibia = resT.velocity;
+
+                leg.coxaGroup.rotation.y = leg.currentAngles.coxa;
+                leg.femurGroup.rotation.z = leg.currentAngles.femur;
+                leg.tibiaGroup.rotation.z = leg.currentAngles.tibia;
+
+                return leg.currentAngles;
+            }
+
+            // =========================================================================
+            // 10. UI & DRAWER INTERACTION HANDLERS
+            // =========================================================================
+            window.selectVariant = function(variant) {
+                currentVariant = variant;
+                const isHead = variant.indexOf('head') !== -1;
+                const isEspCam = variant.indexOf('espcam') !== -1;
+
+                const variantThemes = {
+                    ultrasonic: 0xee3b2b,      // Signature Orange-Red
+                    espcam: 0x06b6d4,          // Tactical Cyan
+                    ultrasonic_head: 0x10b981, // Emerald Green
+                    espcam_head: 0x8b5cf6      // Electric Violet
+                };
+                const colHex = variantThemes[variant] || 0xee3b2b;
+                chassisMat.color.setHex(colHex);
+                footBladeMat.color.setHex(colHex);
+
+                if (isHead) {
+                    // Mount S19 + Sensor ON TOP of the front deck as a turret
+                    frontCenterMount.visible = false;
+                    topHeadTurretMount.visible = true;
+                    topHeadTurretMount.add(headPanGroup);
+                    headPanGroup.position.set(0, 0.36, -0.22);
+
+                    // Position LiPo battery cleanly behind the turret on top deck
+                    batteryMesh.scale.set(1, 1, 0.80);
+                    batteryMesh.position.set(0, 0.45, 0.36);
+                    strapMesh.position.set(0, 0.46, 0.36);
+
+                    espCamCamera.rotation.x = -0.18;
+                } else {
+                    // Mount Sensor front-center between upper & lower plates
+                    topHeadTurretMount.visible = false;
+                    frontCenterMount.visible = true;
+                    frontCenterMount.add(headPanGroup);
+                    headPanGroup.position.set(0, 0, -0.34);
+
+                    // Center LiPo battery on top deck
+                    batteryMesh.scale.set(1, 1, 1);
+                    batteryMesh.position.set(0, 0.45, 0);
+                    strapMesh.position.set(0, 0.46, 0);
+
+                    espCamCamera.rotation.x = -0.06;
+                }
+
+                headLabelSprite.visible = isHead && show3DLabels;
+                ultrasonicSensorGroup.visible = !isEspCam;
+                espCamSensorGroup.visible = isEspCam;
+
+                // Show/Hide S19 Head Card & Telemetry Card
+                document.getElementById('headControlCard').classList.toggle('hidden', !isHead);
+                document.getElementById('headTelemetryCard').classList.toggle('hidden', !isHead);
+                document.getElementById('fpvCameraWindow').classList.toggle('hidden', !isEspCam || isCleanHud);
+
+                // Update Header Badges
+                document.getElementById('badgeServoCount').textContent = isHead ? '19 SERVO' : '18 SERVO';
+                document.getElementById('telemetryHeaderTitle').textContent = isHead ? 'TELEMETRI 19 SERVO' : 'TELEMETRI 18 SERVO';
+
+                const statusBadge = document.getElementById('sensorStatusBadge');
+                const statusDot = document.getElementById('sensorStatusDot');
+                const statusText = document.getElementById('sensorStatusText');
+                if (isEspCam) {
+                    statusBadge.className = 'hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-red-950/65 border border-red-500/40 text-[11px] mono-tabular font-semibold text-red-300';
+                    statusDot.className = 'w-2 h-2 rounded-full bg-red-500 animate-ping';
+                    statusText.textContent = 'ESP32-CAM LIVE';
+                } else {
+                    statusBadge.className = 'hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-cyan-950/65 border border-cyan-500/35 text-[11px] mono-tabular font-semibold text-cyan-300';
+                    statusDot.className = 'w-2 h-2 rounded-full bg-cyan-400 animate-pulse';
+                    statusText.textContent = '200 cm';
+                }
+
+                if (!isHead) {
+                    headAutoScan = false;
+                    targetHeadPanRad = 0;
+                    const scanBtn = document.getElementById('btnHeadAutoScan');
+                    if (scanBtn) {
+                        scanBtn.textContent = 'Auto Scan: OFF';
+                        scanBtn.className = 'py-1.5 px-2 rounded-lg text-[11px] font-semibold bg-slate-900/95 text-slate-400 border border-slate-700 transition';
+                    }
+                }
+
+                // Highlight active variant pill in header
+                ['ultrasonic', 'espcam', 'ultrasonic_head', 'espcam_head'].forEach(function(v) {
+                    const hdrBtn = document.getElementById('hdr-var-' + v);
+                    if (hdrBtn) {
+                        hdrBtn.className = v === variant
+                            ? 'flex-1 lg:flex-initial px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition bg-red-600 text-white shadow whitespace-nowrap flex items-center justify-center gap-1.5'
+                            : 'flex-1 lg:flex-initial px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition text-slate-300 hover:bg-slate-800/90 whitespace-nowrap flex items-center justify-center gap-1.5';
+                    }
+                });
+            };
+
+            window.centerHeadServo = function() {
+                headAutoScan = false;
+                targetHeadPanRad = 0;
+                const btn = document.getElementById('btnHeadAutoScan');
+                if (btn) {
+                    btn.textContent = 'Auto Scan: OFF';
+                    btn.className = 'py-1.5 px-2 rounded-lg text-[11px] font-semibold bg-slate-900/95 text-slate-400 border border-slate-700 transition';
+                }
+                const slider = document.getElementById('sliderHeadPan');
+                const valLabel = document.getElementById('valHeadPan');
+                const badge = document.getElementById('head-state-badge');
+                if (slider) slider.value = 0;
+                if (valLabel) valLabel.textContent = '0°';
+                if (badge) badge.textContent = 'STATIC (0°)';
+            };
+
+            window.toggleHeadAutoScan = function() {
+                headAutoScan = !headAutoScan;
+                const btn = document.getElementById('btnHeadAutoScan');
+                const badge = document.getElementById('head-state-badge');
+                if (headAutoScan) {
+                    btn.textContent = 'Auto Scan: ON';
+                    btn.className = 'py-1.5 px-2 rounded-lg text-[11px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/50 transition';
+                    if (badge) badge.textContent = 'SCANNING';
+                } else {
+                    window.centerHeadServo();
+                }
+            };
+
+            window.onManualHeadPan = function(degVal) {
+                if (headAutoScan) {
+                    headAutoScan = false;
+                    const btn = document.getElementById('btnHeadAutoScan');
+                    if (btn) {
+                        btn.textContent = 'Auto Scan: OFF';
+                        btn.className = 'py-1.5 px-2 rounded-lg text-[11px] font-semibold bg-slate-900/95 text-slate-400 border border-slate-700 transition';
+                    }
+                }
+                const deg = parseFloat(degVal) || 0;
+                targetHeadPanRad = THREE.MathUtils.degToRad(deg);
+                const valLabel = document.getElementById('valHeadPan');
+                if (valLabel) valLabel.textContent = deg + '°';
+                const badge = document.getElementById('head-state-badge');
+                if (badge) badge.textContent = deg === 0 ? 'STATIC (0°)' : 'PAN (' + deg + '°)';
+            };
+
+            window.selectGait = function(gait) {
+                currentGait = gait;
+                document.getElementById('gaitBadge').textContent = gait.toUpperCase();
+                ['tripod', 'wave', 'ripple', 'dance'].forEach(function(g) {
+                    const btn = document.getElementById('gait-' + g);
+                    if (btn) {
+                        btn.className = g === gait
+                            ? 'py-2 px-2 rounded-lg text-xs font-bold transition bg-red-600 text-white shadow shadow-red-600/25'
+                            : 'py-2 px-2 rounded-lg text-xs font-semibold transition bg-slate-900/90 text-slate-300 border border-slate-800 hover:border-slate-600';
+                    }
+                });
+            };
+
+            window.selectTerrain = function(terrain) {
+                currentTerrain = terrain;
+                buildTerrain(terrain);
+                const labelsMap = { flat: 'FLAT', blocks: 'BLOCKS', boulders: 'ROCKS', ramp: 'RAMP' };
+                document.getElementById('terrainBadge').textContent = labelsMap[terrain] || 'FLAT';
+                ['flat', 'blocks', 'boulders', 'ramp'].forEach(function(t) {
+                    const btn = document.getElementById('terrain-' + t);
+                    if (btn) {
+                        btn.className = t === terrain
+                            ? 'py-1.5 px-2 rounded-lg text-xs font-bold transition bg-amber-600 text-white'
+                            : 'py-1.5 px-2 rounded-lg text-xs font-semibold transition bg-slate-900/90 text-slate-300 border border-slate-800 hover:border-slate-600';
+                    }
+                });
+            };
+
+            window.setAutoWalkState = function(active) {
+                isAutoWalking = Boolean(active);
+                const btn = document.getElementById('btnAutoWalk');
+                const iconPlay = document.getElementById('iconAutoPlay');
+                const iconStop = document.getElementById('iconAutoStop');
+                const txt = document.getElementById('textAutoWalk');
+                const padAuto = document.getElementById('padBtnAuto');
+
+                if (isAutoWalking) {
+                    btn.className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30 transition flex items-center gap-1.5';
+                    iconPlay.classList.add('hidden');
+                    iconStop.classList.remove('hidden');
+                    txt.textContent = 'STOP JALAN';
+                    if (padAuto) {
+                        padAuto.className = 'px-3 py-1.5 rounded-full text-[10px] mono-tabular font-extrabold bg-emerald-600 text-white border border-emerald-400 shadow shadow-emerald-600/40 transition';
+                    }
+                } else {
+                    btn.className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white shadow-lg shadow-red-600/30 transition flex items-center gap-1.5';
+                    iconPlay.classList.remove('hidden');
+                    iconStop.classList.add('hidden');
+                    txt.textContent = 'AUTO JALAN';
+                    if (padAuto) {
+                        padAuto.className = 'px-3 py-1.5 rounded-full text-[10px] mono-tabular font-extrabold bg-emerald-600/25 text-emerald-300 border border-emerald-500/45 hover:bg-emerald-600 hover:text-white transition';
+                    }
+                }
+            };
+
+            window.toggleAutoWalk = function() {
+                window.setAutoWalkState(!isAutoWalking);
+            };
+
+            window.stopAllMovement = function() {
+                window.setAutoWalkState(false);
+                Object.keys(inputState).forEach(function(k) {
+                    inputState[k] = false;
+                });
+                document.querySelectorAll('.pad-btn').forEach(function(b) {
+                    b.classList.remove('active-key');
+                });
+            };
+
+            window.toggleLabels = function() {
+                show3DLabels = !show3DLabels;
+                const isHead = currentVariant.indexOf('head') !== -1;
+                all3DLabelSprites.forEach(function(sp) {
+                    if (sp === headLabelSprite) {
+                        sp.visible = show3DLabels && isHead;
+                    } else {
+                        sp.visible = show3DLabels;
+                    }
+                });
+                const btn = document.getElementById('btnToggleLabels');
+                btn.className = show3DLabels
+                    ? 'px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 transition flex items-center gap-1.5'
+                    : 'px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800/90 text-slate-400 border border-slate-700 hover:bg-slate-700 transition flex items-center gap-1.5';
+            };
+
+            window.toggleEspCamFlash = function() {
+                espFlashOn = !espFlashOn;
+                const btn = document.getElementById('btnEspFlash');
+                if (espFlashOn) {
+                    espFlashLight.intensity = 3.8;
+                    espFlashBulbMat.color.setHex(0xffffff);
+                    espFovCone.material.opacity = 0.18;
+                    btn.className = 'px-2 py-0.5 rounded-lg text-[10px] mono-tabular font-bold bg-amber-500/25 text-amber-300 border border-amber-400 transition flex items-center gap-1';
+                } else {
+                    espFlashLight.intensity = 0;
+                    espFlashBulbMat.color.setHex(0x64748b);
+                    espFovCone.material.opacity = 0.08;
+                    btn.className = 'px-2 py-0.5 rounded-lg text-[10px] mono-tabular font-bold bg-slate-800/95 text-slate-300 border border-slate-700 hover:border-amber-400 transition flex items-center gap-1';
+                }
+            };
+
+            window.updatePoseParam = function() {
+                targetBodyHeight = parseFloat(document.getElementById('sliderHeight').value);
+                targetPitchDeg = parseFloat(document.getElementById('sliderPitch').value);
+                targetRollDeg = parseFloat(document.getElementById('sliderRoll').value);
+
+                document.getElementById('valBodyHeight').textContent = targetBodyHeight.toFixed(2) + ' cm';
+                document.getElementById('valPitch').textContent = targetPitchDeg + '°';
+                document.getElementById('valRoll').textContent = targetRollDeg + '°';
+            };
+
+            window.updateGaitParam = function() {
+                gaitSpeedMult = parseFloat(document.getElementById('sliderSpeed').value);
+                stepHeight = parseFloat(document.getElementById('sliderStepHeight').value);
+
+                document.getElementById('valSpeed').textContent = gaitSpeedMult.toFixed(1) + 'x';
+                document.getElementById('valStepHeight').textContent = stepHeight.toFixed(2) + ' cm';
+            };
+
+            window.resetPose = function() {
+                document.getElementById('sliderHeight').value = DEFAULT_BODY_HEIGHT;
+                document.getElementById('sliderPitch').value = 0;
+                document.getElementById('sliderRoll').value = 0;
+                document.getElementById('sliderSpeed').value = 1.0;
+                document.getElementById('sliderStepHeight').value = 0.85;
+                updatePoseParam();
+                updateGaitParam();
+            };
+
+            // Desktop Left & Right Drawer Collapsible Toggles
+            window.toggleDesktopLeftDrawer = function() {
+                desktopLeftCollapsed = !desktopLeftCollapsed;
+                const drawer = document.getElementById('leftControlDrawer');
+                const expandBtn = document.getElementById('btnExpandLeft');
+                const fpvWin = document.getElementById('fpvCameraWindow');
+                if (desktopLeftCollapsed) {
+                    drawer.classList.add('lg:hidden');
+                    expandBtn.classList.remove('hidden');
+                    expandBtn.classList.add('lg:flex');
+                    fpvWin.classList.remove('lg:left-[308px]');
+                    fpvWin.classList.add('lg:left-[110px]');
+                } else {
+                    drawer.classList.remove('lg:hidden');
+                    expandBtn.classList.add('hidden');
+                    expandBtn.classList.remove('lg:flex');
+                    fpvWin.classList.remove('lg:left-[110px]');
+                    fpvWin.classList.add('lg:left-[308px]');
+                }
+            };
+
+            window.toggleDesktopRightDrawer = function() {
+                desktopRightCollapsed = !desktopRightCollapsed;
+                const drawer = document.getElementById('rightTelemetryDrawer');
+                const expandBtn = document.getElementById('btnExpandRight');
+                if (desktopRightCollapsed) {
+                    drawer.classList.add('lg:hidden');
+                    expandBtn.classList.remove('hidden');
+                    expandBtn.classList.add('lg:flex');
+                } else {
+                    drawer.classList.remove('lg:hidden');
+                    expandBtn.classList.add('hidden');
+                    expandBtn.classList.remove('lg:flex');
+                }
+            };
+
+            // Clean HUD Mode Toggle (with Floating Restore Pill)
+            window.toggleCleanHud = function() {
+                isCleanHud = !isCleanHud;
+                const header = document.getElementById('topHeaderBar');
+                const left = document.getElementById('leftControlDrawer');
+                const right = document.getElementById('rightTelemetryDrawer');
+                const pad = document.getElementById('gamepadPillBar');
+                const dock = document.getElementById('mobileBottomDock');
+                const fpv = document.getElementById('fpvCameraWindow');
+                const restoreBtn = document.getElementById('btnRestoreHud');
+                const expL = document.getElementById('btnExpandLeft');
+                const expR = document.getElementById('btnExpandRight');
+
+                if (isCleanHud) {
+                    header.classList.add('hidden');
+                    left.classList.add('hidden', 'lg:hidden');
+                    right.classList.add('hidden', 'lg:hidden');
+                    pad.classList.add('hidden');
+                    dock.classList.add('hidden');
+                    fpv.classList.add('hidden');
+                    expL.classList.add('hidden', 'lg:hidden');
+                    expR.classList.add('hidden', 'lg:hidden');
+                    restoreBtn.classList.remove('hidden');
+                } else {
+                    restoreBtn.classList.add('hidden');
+                    header.classList.remove('hidden');
+                    dock.classList.remove('hidden');
+                    pad.classList.remove('hidden');
+                    if (!desktopLeftCollapsed) {
+                        left.classList.remove('lg:hidden');
+                    } else {
+                        expL.classList.remove('lg:hidden');
+                    }
+                    if (!desktopRightCollapsed) {
+                        right.classList.remove('lg:hidden');
+                    } else {
+                        expR.classList.remove('lg:hidden');
+                    }
+                    if (currentVariant.indexOf('espcam') !== -1) {
+                        fpv.classList.remove('hidden');
+                    }
+                    window.setMobileTab('remote');
+                }
+            };
+
+            // Mobile 4-Tab Navigation Dock Handler (< 1024px)
+            window.setMobileTab = function(tabName) {
+                const left = document.getElementById('leftControlDrawer');
+                const right = document.getElementById('rightTelemetryDrawer');
+                const pad = document.getElementById('gamepadPillBar');
+
+                ['remote', 'controls', 'telemetry', 'full3d'].forEach(function(t) {
+                    const btn = document.getElementById('mob-tab-' + t);
+                    if (btn) {
+                        btn.className = t === tabName
+                            ? 'py-1.5 rounded-xl text-[10px] sm:text-[11px] font-bold bg-red-600 text-white flex flex-col items-center gap-0.5 transition'
+                            : 'py-1.5 rounded-xl text-[10px] sm:text-[11px] font-semibold text-slate-300 flex flex-col items-center gap-0.5 transition';
+                    }
+                });
+
+                if (tabName === 'remote') {
+                    left.classList.add('hidden');
+                    right.classList.add('hidden');
+                    pad.classList.remove('hidden');
+                } else if (tabName === 'controls') {
+                    left.classList.remove('hidden');
+                    right.classList.add('hidden');
+                    pad.classList.add('hidden');
+                } else if (tabName === 'telemetry') {
+                    left.classList.add('hidden');
+                    right.classList.remove('hidden');
+                    pad.classList.add('hidden');
+                } else if (tabName === 'full3d') {
+                    left.classList.add('hidden');
+                    right.classList.add('hidden');
+                    pad.classList.add('hidden');
+                }
+            };
+
+            function setupControls() {
+                const padButtons = document.querySelectorAll('.pad-btn[data-action]');
+                padButtons.forEach(function(btn) {
+                    const action = btn.getAttribute('data-action');
+                    if (!action || !(action in inputState)) return;
+
+                    const press = function(e) {
+                        if (e && e.cancelable) e.preventDefault();
+                        inputState[action] = true;
+                        btn.classList.add('active-key');
+                    };
+                    const release = function(e) {
+                        if (e && e.cancelable) e.preventDefault();
+                        inputState[action] = false;
+                        btn.classList.remove('active-key');
+                    };
+
+                    btn.addEventListener('pointerdown', press);
+                    btn.addEventListener('pointerup', release);
+                    btn.addEventListener('pointerleave', release);
+                    btn.addEventListener('pointercancel', release);
+                });
+
+                const keyMap = {
+                    KeyW: { action: 'forward', btnId: 'btnForward' },
+                    ArrowUp: { action: 'forward', btnId: 'btnForward' },
+                    KeyS: { action: 'backward', btnId: 'btnBackward' },
+                    ArrowDown: { action: 'backward', btnId: 'btnBackward' },
+                    KeyA: { action: 'left', btnId: 'btnLeft' },
+                    ArrowLeft: { action: 'left', btnId: 'btnLeft' },
+                    KeyD: { action: 'right', btnId: 'btnRight' },
+                    ArrowRight: { action: 'right', btnId: 'btnRight' },
+                    KeyQ: { action: 'turnLeft', btnId: 'btnTurnLeft' },
+                    KeyE: { action: 'turnRight', btnId: 'btnTurnRight' }
+                };
+
+                window.addEventListener('keydown', function(e) {
+                    if (e.code === 'Space') {
+                        e.preventDefault();
+                        if (!e.repeat) window.toggleAutoWalk();
+                        return;
+                    }
+                    if (e.code === 'KeyR' && !e.repeat) {
+                        window.resetCameraView();
+                        return;
+                    }
+                    const mapped = keyMap[e.code];
+                    if (mapped) {
+                        inputState[mapped.action] = true;
+                        const btn = document.getElementById(mapped.btnId);
+                        if (btn) btn.classList.add('active-key');
+                    }
+                });
+
+                window.addEventListener('keyup', function(e) {
+                    const mapped = keyMap[e.code];
+                    if (mapped) {
+                        inputState[mapped.action] = false;
+                        const btn = document.getElementById(mapped.btnId);
+                        if (btn) btn.classList.remove('active-key');
+                    }
+                });
+
+                window.addEventListener('blur', function() {
+                    Object.keys(inputState).forEach(function(k) {
+                        inputState[k] = false;
+                    });
+                    padButtons.forEach(function(b) {
+                        b.classList.remove('active-key');
+                    });
                 });
             }
 
-            // Init foot positions in world space
-            robotBodyGroup.updateMatrixWorld(true);
-            legs.forEach(leg => {
-                const worldPos = leg.homePosLocal.clone();
-                leg.hipGroup.localToWorld(worldPos);
-                leg.currentFootPosWorld.copy(worldPos);
-                leg.targetFootPosWorld.copy(worldPos);
-            });
-        }
-
-        // --- 4. TERRAIN BUILDER (Flat, Step Blocks, Boulders, Ramp) ---
-        function buildTerrain(type) {
-            // Remove existing terrain
-            terrainObjects.forEach(obj => scene.remove(obj));
-            terrainObjects = [];
-            currentTerrain = type;
-
-            if (type === 'blocks') {
-                for (let i = 0; i < 16; i++) {
-                    const w = 1.2 + Math.random() * 0.8;
-                    const h = 0.2 + Math.random() * 0.4;
-                    const d = 1.2 + Math.random() * 0.8;
-                    const block = new THREE.Mesh(
-                        new THREE.BoxGeometry(w, h, d),
-                        new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.9 })
-                    );
-                    const angle = Math.random() * Math.PI * 2;
-                    const dist = 2 + Math.random() * 6;
-                    block.position.set(Math.cos(angle) * dist, h / 2, Math.sin(angle) * dist);
-                    block.receiveShadow = true; block.castShadow = true;
-                    scene.add(block);
-                    terrainObjects.push(block);
+            // =========================================================================
+            // 11. GAIT PHASE & DUTY CYCLE HELPERS
+            // =========================================================================
+            function getLegPhaseOffset(legIdx) {
+                if (currentGait === 'tripod') {
+                    return (legIdx % 2 === 0) ? 0.0 : 0.5;
+                } else if (currentGait === 'wave') {
+                    return legIdx / NUM_LEGS;
+                } else if (currentGait === 'ripple') {
+                    const offsets = [0.0, 0.333, 0.666, 0.166, 0.500, 0.833];
+                    return offsets[legIdx];
                 }
-            } else if (type === 'boulders') {
-                for (let i = 0; i < 14; i++) {
-                    const r = 0.4 + Math.random() * 0.5;
-                    const boulder = new THREE.Mesh(
-                        new THREE.DodecahedronGeometry(r, 1),
-                        new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.8 })
-                    );
-                    const angle = Math.random() * Math.PI * 2;
-                    const dist = 2.5 + Math.random() * 6;
-                    boulder.position.set(Math.cos(angle) * dist, r * 0.5, Math.sin(angle) * dist);
-                    boulder.rotation.set(Math.random(), Math.random(), Math.random());
-                    boulder.receiveShadow = true; boulder.castShadow = true;
-                    scene.add(boulder);
-                    terrainObjects.push(boulder);
-                }
-            } else if (type === 'ramp') {
-                const ramp = new THREE.Mesh(
-                    new THREE.BoxGeometry(4, 0.1, 10),
-                    new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.7 })
-                );
-                ramp.position.set(0, 0.8, 4);
-                ramp.rotation.x = -0.15;
-                ramp.receiveShadow = true; ramp.castShadow = true;
-                scene.add(ramp);
-                terrainObjects.push(ramp);
-            }
-        }
-
-        // Terrain Height Raycaster Function
-        function getTerrainHeightAt(x, z) {
-            if (currentTerrain === 'flat' || terrainObjects.length === 0) return 0;
-            const raycaster = new THREE.Raycaster(new THREE.Vector3(x, 10, z), new THREE.Vector3(0, -1, 0));
-            const intersects = raycaster.intersectObjects(terrainObjects);
-            if (intersects.length > 0) {
-                return intersects[0].point.y;
-            }
-            return 0;
-        }
-
-        // --- 5. INVERSE KINEMATICS (3-DOF Trigonometric Solver) ---
-        function solveIK(leg, targetLocalPos) {
-            // targetLocalPos relative to Coxa Pivot
-            const x = targetLocalPos.x;
-            const y = targetLocalPos.y;
-            const z = targetLocalPos.z;
-
-            // 1. Coxa Angle (Yaw in horizontal plane)
-            const coxaAngle = Math.atan2(z, x);
-
-            // Projection onto leg plane
-            const r = Math.hypot(x, z) - L_COXA;
-            const d = Math.hypot(r, y);
-
-            // Reach boundary check
-            const maxReach = (L_FEMUR + L_TIBIA) * 0.98;
-            const minReach = Math.abs(L_FEMUR - L_TIBIA) + 0.1;
-            const clampedD = Math.max(minReach, Math.min(maxReach, d));
-
-            // 2. Femur Angle
-            const alpha = Math.atan2(y, r);
-            const beta = Math.acos((L_FEMUR * L_FEMUR + clampedD * clampedD - L_TIBIA * L_TIBIA) / (2 * L_FEMUR * clampedD));
-            const femurAngle = alpha + beta;
-
-            // 3. Tibia Angle
-            const gamma = Math.acos((L_FEMUR * L_FEMUR + L_TIBIA * L_TIBIA - clampedD * clampedD) / (2 * L_FEMUR * L_TIBIA));
-            const tibiaAngle = gamma - Math.PI;
-
-            // Apply joint rotations
-            leg.coxaGroup.rotation.y = coxaAngle;
-            leg.femurGroup.rotation.z = femurAngle;
-            leg.tibiaGroup.rotation.z = tibiaAngle;
-
-            // Store degrees for telemetry
-            leg.angles.coxa = Math.round(THREE.MathUtils.radToDeg(coxaAngle));
-            leg.angles.femur = Math.round(THREE.MathUtils.radToDeg(femurAngle));
-            leg.angles.tibia = Math.round(THREE.MathUtils.radToDeg(tibiaAngle));
-        }
-
-        // --- 6. GAIT GENERATOR & ANIMATION LOOP ---
-        function updateGaitAndIK(deltaTime) {
-            // Velocity calculation from inputs
-            let inputFwd = controlState.forward;
-            let inputStrafe = controlState.strafe;
-            let inputTurn = controlState.turn;
-
-            if (autoWalk) inputFwd = 1.0;
-
-            const targetVel = new THREE.Vector3(inputStrafe, 0, -inputFwd).multiplyScalar(1.5 * stepSpeed);
-            currentVelocity.lerp(targetVel, 0.1);
-
-            // Smooth angular velocity (inertia on turn start/stop)
-            const targetTurnVel = inputTurn * 1.2 * stepSpeed;
-            currentTurnVel = THREE.MathUtils.lerp(currentTurnVel, targetTurnVel, 0.1);
-
-            const isMoving = currentVelocity.lengthSq() > 0.001 || Math.abs(currentTurnVel) > 0.005;
-
-            // Advance gait phase clock
-            if (isMoving) {
-                stepPhase += deltaTime * 2.5 * stepSpeed;
+                return 0;
             }
 
-            // Update Robot Body World Position & Orientation
-            if (isMoving) {
-                hexapodHeading += currentTurnVel * deltaTime;
-                hexapodGroup.rotation.y = hexapodHeading;
-
-                const moveDelta = currentVelocity.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), hexapodHeading).multiplyScalar(deltaTime);
-                hexapodGroup.position.add(moveDelta);
+            function getSwingDutyRatio() {
+                if (currentGait === 'tripod') return 0.48;
+                if (currentGait === 'wave') return 0.22;
+                if (currentGait === 'ripple') return 0.36;
+                return 0.45;
             }
 
-            // Body Pose & Dynamic Sway (Roll, Pitch, Heave for smooth weight transfer)
-            const radPitch = THREE.MathUtils.degToRad(posePitch);
-            const radRoll = THREE.MathUtils.degToRad(poseRoll);
+            // =========================================================================
+            // 12. REAL-TIME C2-CONTINUOUS SIMULATION LOOP
+            // =========================================================================
+            const clock = new THREE.Clock();
+            let lastFpsTime = 0;
+            let frameCounter = 0;
 
-            let swayY = 0;
-            let swayRoll = 0;
-            let swayPitch = 0;
+            const desiredVel = new THREE.Vector3();
+            const worldStepDelta = new THREE.Vector3();
+            const tempBodyFoot = new THREE.Vector3();
+            const tempWorldFoot = new THREE.Vector3();
+            const prevHexPos = new THREE.Vector3();
+            const upAxis = new THREE.Vector3(0, 1, 0);
 
-            if (isMoving) {
-                const swayFreq = stepPhase * Math.PI * 2;
-                swayY = Math.sin(swayFreq) * 0.08 * stepHeight;
-                // Add natural banking roll into turn direction
-                swayRoll = Math.sin(swayFreq * 0.5) * 0.04 - currentTurnVel * 0.05;
-                swayPitch = Math.cos(swayFreq * 0.5) * 0.03;
-            }
+            const sonarRaycaster = new THREE.Raycaster();
+            const sonarOrigin = new THREE.Vector3();
+            const sonarForwardDir = new THREE.Vector3();
 
-            hexapodGroup.position.y = DEFAULT_BODY_HEIGHT;
-            robotBodyGroup.position.y = poseY + swayY;
-            robotBodyGroup.rotation.x = radPitch + swayPitch;
-            robotBodyGroup.rotation.z = radRoll + swayRoll;
+            function animate() {
+                requestAnimationFrame(animate);
 
-            robotBodyGroup.updateMatrixWorld(true);
+                const rawDt = clock.getDelta();
+                const dt = Math.min(rawDt, 0.05);
+                const elapsed = clock.getElapsedTime();
 
-            // Gait Pattern Configuration
-            const pattern = GAIT_PATTERNS[currentGait] || GAIT_PATTERNS.tripod;
-            const numGroups = pattern.groups.length;
-            const cyclePhase = (stepPhase % numGroups);
-            const activeGroupIdx = Math.floor(cyclePhase);
-            const groupProgress = cyclePhase - activeGroupIdx; // 0 to 1
-
-            // Leg IK Updates
-            legs.forEach((leg, i) => {
-                // Determine if this leg is in SWING (in air) or STANCE (on ground)
-                const inSwingGroup = pattern.groups[activeGroupIdx].includes(i);
-
-                // Compute neutral step home position in World Space
-                const idealWorldFoot = leg.homePosLocal.clone();
-                leg.hipGroup.localToWorld(idealWorldFoot);
-
-                // Adjust ideal foot Y with terrain height underneath
-                const groundY = getTerrainHeightAt(idealWorldFoot.x, idealWorldFoot.z);
-                idealWorldFoot.y = groundY;
-
-                if (inSwingGroup && isMoving) {
-                    if (leg.isStance) {
-                        // Just started swinging: lock liftoff pos
-                        leg.isStance = false;
-                        leg.liftOffPosWorld.copy(leg.currentFootPosWorld);
+                // Update FPS Readout
+                frameCounter++;
+                if (elapsed - lastFpsTime >= 0.4) {
+                    const fps = Math.round(frameCounter / (elapsed - lastFpsTime));
+                    const fpsEl = document.getElementById('fpsCounter');
+                    if (fpsEl) {
+                        fpsEl.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> ' + fps + ' FPS';
                     }
+                    frameCounter = 0;
+                    lastFpsTime = elapsed;
+                }
 
-                    // Predict stride landing target ahead of body motion (Linear + Rotational tangent stride)
-                    const strideVector = currentVelocity.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), hexapodHeading).multiplyScalar(0.35);
-                    
-                    // Exact tangential rotational offset per foot
-                    const relX = idealWorldFoot.x - hexapodGroup.position.x;
-                    const relZ = idealWorldFoot.z - hexapodGroup.position.z;
-                    const rotStride = new THREE.Vector3(-relZ, 0, relX).multiplyScalar(currentTurnVel * 0.25);
+                // 1. Critically Damped 2nd-Order Linear & Angular Velocity Smoothing (Zero-Jerk S-Curve)
+                const maxWalkSpeed = 2.40 * gaitSpeedMult;
+                const maxTurnSpeed = 1.25 * gaitSpeedMult;
 
-                    leg.targetFootPosWorld.copy(idealWorldFoot).add(strideVector).add(rotStride);
-                    leg.targetFootPosWorld.y = getTerrainHeightAt(leg.targetFootPosWorld.x, leg.targetFootPosWorld.z);
+                const fwdInput = ((inputState.forward || isAutoWalking) ? 1 : 0) - (inputState.backward ? 1 : 0);
+                const strafeInput = (inputState.right ? 1 : 0) - (inputState.left ? 1 : 0);
+                const turnInput = (inputState.turnLeft ? 1 : 0) - (inputState.turnRight ? 1 : 0);
 
-                    // Interpolate Swing arc (Quintic Smoothstep for ultra-smooth trajectory)
-                    const t = groupProgress;
-                    const smoothT = t * t * t * (t * (t * 6 - 15) + 10);
-                    
-                    const swingTarget = new THREE.Vector3();
-                    swingTarget.lerpVectors(leg.liftOffPosWorld, leg.targetFootPosWorld, smoothT);
+                desiredVel.set(strafeInput, 0, -fwdInput);
+                if (desiredVel.lengthSq() > 1) desiredVel.normalize();
+                desiredVel.multiplyScalar(maxWalkSpeed);
 
-                    // Add Vertical Step Arc using smooth sine wave
-                    const arcHeight = stepHeight * Math.sin(t * Math.PI);
-                    swingTarget.y += arcHeight;
+                const targetTurn = turnInput * maxTurnSpeed;
 
-                    // Exponential smoothing towards swing target for zero-jitter
-                    leg.currentFootPosWorld.lerp(swingTarget, 0.35);
+                const velOmega = 9.5;
+                const dampVx = stepCriticallyDamped(currentVel.x, desiredVel.x, currentVelAccel.x, velOmega, dt);
+                const dampVz = stepCriticallyDamped(currentVel.z, desiredVel.z, currentVelAccel.z, velOmega, dt);
+                const dampTurn = stepCriticallyDamped(currentTurnVel, targetTurn, currentTurnAccel, velOmega, dt);
 
+                currentVel.x = dampVx.value;
+                currentVelAccel.x = dampVx.velocity;
+                currentVel.z = dampVz.value;
+                currentVelAccel.z = dampVz.velocity;
+                currentTurnVel = dampTurn.value;
+                currentTurnAccel = dampTurn.velocity;
+
+                const linearSpeed = currentVel.length();
+                const angularSpeed = Math.abs(currentTurnVel);
+                const isMoving = linearSpeed > 0.015 || angularSpeed > 0.015;
+
+                // 2. Smooth World-Space Body Translation, Rotation & Camera Follow
+                prevHexPos.copy(hexapodRoot.position);
+
+                if (isMoving && currentGait !== 'dance') {
+                    hexapodRoot.rotation.y += currentTurnVel * dt;
+                    worldStepDelta.copy(currentVel).multiplyScalar(dt);
+                    worldStepDelta.applyAxisAngle(upAxis, hexapodRoot.rotation.y);
+                    hexapodRoot.position.add(worldStepDelta);
+                }
+
+                const camFollowDelta = tempBodyFoot.subVectors(hexapodRoot.position, prevHexPos);
+                camera.position.add(camFollowDelta);
+                if (controls) {
+                    controls.target.add(camFollowDelta);
+                } else if (fallbackCamState) {
+                    fallbackCamState.target.add(camFollowDelta);
+                }
+
+                // 3. Head Servo (S19) Pan Update (Stationary at 0 deg unless Auto Scan or Manual Slider)
+                if (currentVariant.indexOf('head') !== -1) {
+                    if (headAutoScan) {
+                        headScanTime += dt * 1.45;
+                        targetHeadPanRad = Math.sin(headScanTime) * THREE.MathUtils.degToRad(48);
+                        const degNow = Math.round(THREE.MathUtils.radToDeg(targetHeadPanRad));
+                        const slider = document.getElementById('sliderHeadPan');
+                        const valLabel = document.getElementById('valHeadPan');
+                        if (slider) slider.value = degNow;
+                        if (valLabel) valLabel.textContent = degNow + '°';
+                    }
+                    const dampHead = stepCriticallyDamped(currentHeadPanRad, targetHeadPanRad, headPanVel, 18.0, dt);
+                    currentHeadPanRad = dampHead.value;
+                    headPanVel = dampHead.velocity;
+                    headPanGroup.rotation.y = currentHeadPanRad;
+
+                    const headDeg = Math.round(THREE.MathUtils.radToDeg(currentHeadPanRad));
+                    const headTeleDeg = document.getElementById('tele-head-deg');
+                    const headTeleBar = document.getElementById('tele-head-bar');
+                    if (headTeleDeg) headTeleDeg.textContent = headDeg + '°';
+                    if (headTeleBar) {
+                        const pct = THREE.MathUtils.clamp(((headDeg + 65) / 130) * 100, 0, 100);
+                        headTeleBar.style.width = pct + '%';
+                    }
                 } else {
-                    // STANCE PHASE: Foot stays planted on ground while body moves
-                    leg.isStance = true;
+                    headPanGroup.rotation.y = 0;
+                    currentHeadPanRad = 0;
+                    headPanVel = 0;
+                }
 
-                    if (!isMoving) {
-                        // Smoothly return foot to neutral position when stopped
-                        leg.currentFootPosWorld.lerp(idealWorldFoot, 0.15);
+                // 4. Chassis Suspension, Natural Cadence Heave & Turn Banking
+                const dampH = stepCriticallyDamped(currentBodyHeight, targetBodyHeight, bodyHeightVel, 14.0, dt);
+                currentBodyHeight = dampH.value;
+                bodyHeightVel = dampH.velocity;
+
+                const centerGroundY = getTerrainHeightAt(hexapodRoot.position.x, hexapodRoot.position.z);
+                const supportBaseY = THREE.MathUtils.lerp(centerGroundY, avgGroundSupportY, 0.55);
+
+                let dynamicHeave = 0;
+                let dynamicPitch = THREE.MathUtils.degToRad(targetPitchDeg);
+                let dynamicRoll = THREE.MathUtils.degToRad(targetRollDeg);
+                let swayX = 0;
+                let swayZ = 0;
+                let cycleFreq = 1.45 * gaitSpeedMult;
+
+                if (currentGait === 'dance') {
+                    const danceT = elapsed * 2.7 * gaitSpeedMult;
+                    swayX = Math.cos(danceT) * 0.42;
+                    swayZ = Math.sin(danceT) * 0.42;
+                    dynamicHeave = Math.sin(danceT * 2) * 0.24;
+                    dynamicPitch += Math.sin(danceT) * 0.13;
+                    dynamicRoll += Math.cos(danceT) * 0.13;
+                } else if (isMoving) {
+                    const speedRatio = Math.min(1.25, (linearSpeed / maxWalkSpeed) + (angularSpeed / maxTurnSpeed) * 0.85);
+                    cycleFreq = (1.10 + speedRatio * 0.72) * gaitSpeedMult;
+                    gaitPhase = (gaitPhase + dt * cycleFreq) % 1.0;
+
+                    dynamicHeave = Math.sin(gaitPhase * Math.PI * 4) * 0.028 * Math.min(1, speedRatio * 1.4);
+                    // Subtle turn banking & forward acceleration pitch
+                    dynamicRoll += -currentTurnVel * 0.048;
+                    dynamicPitch += (currentVel.z / maxWalkSpeed) * 0.032;
+                }
+
+                robotBodyGroup.position.set(swayX, supportBaseY + currentBodyHeight + dynamicHeave, swayZ);
+                robotBodyGroup.rotation.set(dynamicPitch, 0, dynamicRoll);
+                hexapodRoot.updateMatrixWorld(true);
+
+                // 5. Update All 6 Legs with Exact Circular-Arc Turning Stride & C2 Swing Trajectories
+                const dutySwing = getSwingDutyRatio();
+                const stanceDuration = (1.0 - dutySwing) / Math.max(0.25, cycleFreq);
+                const halfStrideTime = 0.5 * stanceDuration;
+
+                let plantedHeightSum = 0;
+                let plantedFootCount = 0;
+
+                for (let i = 0; i < NUM_LEGS; i++) {
+                    const leg = legs[i];
+                    const phaseOffset = getLegPhaseOffset(i);
+                    const legPhase = (gaitPhase + phaseOffset) % 1.0;
+
+                    // Compute geometrically exact half-stride target in body space
+                    tempBodyFoot.copy(leg.homeBodyPos);
+
+                    if (isMoving && currentGait !== 'dance') {
+                        // Exact circular arc rotation around body center during turning (no radial stretch!)
+                        const halfTurnAngle = currentTurnVel * halfStrideTime;
+                        tempBodyFoot.applyAxisAngle(upAxis, halfTurnAngle);
+
+                        // Linear half-stride offset
+                        tempBodyFoot.x += currentVel.x * halfStrideTime;
+                        tempBodyFoot.z += currentVel.z * halfStrideTime;
+                    }
+
+                    // Convert target foot landing point into world space & raycast terrain height
+                    tempWorldFoot.copy(tempBodyFoot).applyAxisAngle(upAxis, hexapodRoot.rotation.y).add(hexapodRoot.position);
+                    tempWorldFoot.y = getTerrainHeightAt(tempWorldFoot.x, tempWorldFoot.z);
+
+                    const isSwinging = isMoving && currentGait !== 'dance' && (legPhase < dutySwing);
+
+                    if (currentGait === 'dance') {
+                        leg.plantedWorldPos.copy(tempWorldFoot);
+                        leg.wasSwinging = false;
+                        leg.settlingProgress = 1.0;
+                    } else if (!isMoving) {
+                        // Gentle staggered lift-and-settle back to neutral home stance when stopping
+                        const distFromHome = Math.hypot(
+                            leg.plantedWorldPos.x - tempWorldFoot.x,
+                            leg.plantedWorldPos.z - tempWorldFoot.z
+                        );
+
+                        if (leg.wasSwinging) {
+                            leg.liftoffWorldPos.copy(leg.plantedWorldPos);
+                            leg.wasSwinging = false;
+                            leg.settlingProgress = 0.0;
+                            leg.settleDelayTimer = 0;
+                        } else if (leg.settlingProgress >= 1.0 && distFromHome > 0.05) {
+                            leg.liftoffWorldPos.copy(leg.plantedWorldPos);
+                            leg.settlingProgress = 0.0;
+                            leg.settleDelayTimer = leg.settleDelay;
+                        }
+
+                        if (leg.settlingProgress < 1.0) {
+                            if (leg.settleDelayTimer > 0) {
+                                leg.settleDelayTimer = Math.max(0, leg.settleDelayTimer - dt);
+                            } else {
+                                leg.settlingProgress = Math.min(1.0, leg.settlingProgress + dt * 3.4);
+                                const su = minimumJerk(leg.settlingProgress);
+                                leg.plantedWorldPos.lerpVectors(leg.liftoffWorldPos, tempWorldFoot, su);
+                                const baseY = THREE.MathUtils.lerp(leg.liftoffWorldPos.y, tempWorldFoot.y, su);
+                                const liftAmp = Math.min(stepHeight * 0.48, distFromHome * 0.55 + 0.14);
+                                leg.plantedWorldPos.y = baseY + c2BellLift(leg.settlingProgress) * liftAmp;
+                            }
+                        } else {
+                            leg.plantedWorldPos.y = getTerrainHeightAt(leg.plantedWorldPos.x, leg.plantedWorldPos.z);
+                        }
+                    } else if (isSwinging) {
+                        leg.settlingProgress = 1.0;
+                        if (!leg.wasSwinging) {
+                            leg.liftoffWorldPos.copy(leg.plantedWorldPos);
+                            leg.wasSwinging = true;
+                        }
+                        const u = legPhase / dutySwing;
+                        const smoothU = minimumJerk(u);
+
+                        leg.plantedWorldPos.lerpVectors(leg.liftoffWorldPos, tempWorldFoot, smoothU);
+                        const baseGroundY = THREE.MathUtils.lerp(leg.liftoffWorldPos.y, tempWorldFoot.y, smoothU);
+                        leg.plantedWorldPos.y = baseGroundY + c2BellLift(u) * stepHeight;
                     } else {
-                        // Maintain ground contact height
-                        leg.currentFootPosWorld.y = getTerrainHeightAt(leg.currentFootPosWorld.x, leg.currentFootPosWorld.z);
+                        // Stance Phase: Foot remains firmly planted on world terrain
+                        leg.settlingProgress = 1.0;
+                        if (leg.wasSwinging) {
+                            leg.plantedWorldPos.copy(tempWorldFoot);
+                            leg.wasSwinging = false;
+                        }
+                        leg.plantedWorldPos.y = getTerrainHeightAt(leg.plantedWorldPos.x, leg.plantedWorldPos.z);
+                    }
+
+                    const footInAir = isSwinging || (!isMoving && leg.settlingProgress < 0.94);
+                    if (!footInAir) {
+                        plantedHeightSum += leg.plantedWorldPos.y;
+                        plantedFootCount++;
+                    }
+
+                    // Ground Contact Ring Indicator
+                    leg.rippleRing.position.set(leg.plantedWorldPos.x, leg.plantedWorldPos.y + 0.015, leg.plantedWorldPos.z);
+                    leg.rippleRing.visible = !footInAir;
+                    const pulseScale = 0.85 + Math.sin(elapsed * 6 + i) * 0.12;
+                    leg.rippleRing.scale.set(pulseScale, pulseScale, 1);
+
+                    // Solve 3-DOF Analytical Inverse Kinematics
+                    const angles = solveLegIK(leg, leg.plantedWorldPos, dt);
+
+                    // Update Telemetry Cards (every 2 frames)
+                    if (frameCounter % 2 === 0) {
+                        const cDeg = Math.round(THREE.MathUtils.radToDeg(angles.coxa));
+                        const fDeg = Math.round(THREE.MathUtils.radToDeg(angles.femur));
+                        const tDeg = Math.round(THREE.MathUtils.radToDeg(angles.tibia));
+
+                        const elC = document.getElementById('deg-coxa-' + i);
+                        const elF = document.getElementById('deg-femur-' + i);
+                        const elT = document.getElementById('deg-tibia-' + i);
+                        if (elC) elC.textContent = cDeg + '°';
+                        if (elF) elF.textContent = fDeg + '°';
+                        if (elT) elT.textContent = tDeg + '°';
+
+                        const barC = document.getElementById('bar-coxa-' + i);
+                        const barF = document.getElementById('bar-femur-' + i);
+                        const barT = document.getElementById('bar-tibia-' + i);
+                        if (barC) barC.style.width = THREE.MathUtils.clamp(((cDeg + 60) / 120) * 100, 5, 95) + '%';
+                        if (barF) barF.style.width = THREE.MathUtils.clamp(((fDeg + 45) / 110) * 100, 5, 95) + '%';
+                        if (barT) barT.style.width = THREE.MathUtils.clamp(((tDeg + 150) / 150) * 100, 5, 95) + '%';
+
+                        const phaseEl = document.getElementById('leg-phase-' + i);
+                        if (phaseEl) {
+                            if (footInAir) {
+                                phaseEl.textContent = 'SWING';
+                                phaseEl.className = 'text-[9px] mono-tabular font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40';
+                            } else {
+                                phaseEl.textContent = 'STANCE';
+                                phaseEl.className = 'text-[9px] mono-tabular font-bold px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30';
+                            }
+                        }
                     }
                 }
 
-                // Convert World Foot position back into Hip Local coordinates for IK Solver
-                const localTarget = leg.currentFootPosWorld.clone();
-                leg.hipGroup.worldToLocal(localTarget);
-
-                // Solve 18-Servo Angles
-                solveIK(leg, localTarget);
-            });
-
-            // Update Telemetry Panel
-            updateTelemetryUI();
-        }
-
-        // --- 7. TELEMETRY DOM UPDATER ---
-        function updateTelemetryUI() {
-            legs.forEach((leg, i) => {
-                const elState = document.getElementById(`legState-${i}`);
-                const elCoxa = document.getElementById(`ang-coxa-${i}`);
-                const elFemur = document.getElementById(`ang-femur-${i}`);
-                const elTibia = document.getElementById(`ang-tibia-${i}`);
-
-                if (elState) {
-                    elState.innerText = leg.isStance ? "STANCE" : "SWING";
-                    elState.className = leg.isStance ?
-                        "text-[9px] px-1.5 py-0.2 rounded bg-emerald-950 text-emerald-400 font-mono" :
-                        "text-[9px] px-1.5 py-0.2 rounded bg-orange-950 text-orange-400 font-mono animate-pulse";
+                if (plantedFootCount > 0) {
+                    const targetAvgGround = plantedHeightSum / plantedFootCount;
+                    avgGroundSupportY += (targetAvgGround - avgGroundSupportY) * (1 - Math.exp(-8 * dt));
                 }
-                if (elCoxa) elCoxa.innerText = `${leg.angles.coxa}°`;
-                if (elFemur) elFemur.innerText = `${leg.angles.femur}°`;
-                if (elTibia) elTibia.innerText = `${leg.angles.tibia}°`;
-            });
-        }
 
-        // --- 8. UI CONTROLS & EVENT HANDLERS ---
-        function setGait(mode) {
-            currentGait = mode;
-            document.querySelectorAll('.gait-btn').forEach(btn => {
-                btn.className = "gait-btn py-2 px-3 rounded-lg text-xs font-medium border border-slate-700 bg-slate-800/50 text-slate-400 hover:text-white transition";
-            });
-            const active = document.getElementById(`gait-${mode}`);
-            if (active) active.className = "gait-btn py-2 px-3 rounded-lg text-xs font-medium border border-orange-500/50 bg-orange-500/20 text-orange-300 transition";
-        }
+                // 6. Ultrasonic Sonar Waves & Live Distance Readout
+                if (currentVariant.indexOf('espcam') === -1) {
+                    const waveProgress = (elapsed * 1.4) % 1.0;
+                    sonarWaveRing.position.z = -0.25 - waveProgress * 1.25;
+                    sonarWaveRing.scale.setScalar(0.8 + waveProgress * 1.8);
+                    sonarWaveRing.material.opacity = (1 - waveProgress) * 0.7;
 
-        function setTerrain(type) {
-            buildTerrain(type);
-            document.querySelectorAll('.terrain-btn').forEach(btn => {
-                btn.className = "terrain-btn py-2 px-2.5 rounded-lg text-xs border border-slate-700 bg-slate-800/50 text-slate-400 hover:text-white transition text-left";
-            });
-            const active = document.getElementById(`terrain-${type}`);
-            if (active) active.className = "terrain-btn py-2 px-2.5 rounded-lg text-xs border border-cyan-500/50 bg-cyan-500/20 text-cyan-300 transition text-left";
-        }
+                    const waveProgress2 = (elapsed * 1.4 + 0.5) % 1.0;
+                    sonarWaveRing2.position.z = -0.25 - waveProgress2 * 1.25;
+                    sonarWaveRing2.scale.setScalar(0.8 + waveProgress2 * 1.8);
+                    sonarWaveRing2.material.opacity = (1 - waveProgress2) * 0.7;
 
-        function toggleAutoWalk() {
-            autoWalk = !autoWalk;
-            const btn = document.getElementById('btnAutoWalk');
-            const icon = document.getElementById('autoWalkIcon');
-            const text = document.getElementById('autoWalkText');
-            if (autoWalk) {
-                btn.className = "px-4 py-2 rounded-xl text-xs md:text-sm font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg transition-all flex items-center gap-2 glow-orange";
-                icon.className = "fa-solid fa-pause";
-                text.innerText = "STOP AUTO";
+                    ultrasonicSensorGroup.getWorldPosition(sonarOrigin);
+                    ultrasonicSensorGroup.getWorldDirection(sonarForwardDir);
+                    sonarForwardDir.negate();
+                    sonarRaycaster.set(sonarOrigin, sonarForwardDir);
+                    const obsHits = sonarRaycaster.intersectObjects(terrainGroup.children, false);
+                    const distCm = obsHits.length > 0
+                        ? Math.min(250, Math.round(obsHits[0].distance * 25))
+                        : 200;
+                    const statusText = document.getElementById('sensorStatusText');
+                    if (statusText) statusText.textContent = distCm + ' cm';
+                }
+
+                // Update Camera Controls & Main Renderer
+                if (controls) {
+                    controls.update();
+                } else if (fallbackCamState) {
+                    fallbackCamState.update();
+                }
+                renderer.render(scene, camera);
+
+                // Render Live FPV Camera Feed for ESP32-CAM Variants
+                if (currentVariant.indexOf('espcam') !== -1) {
+                    fpvRenderer.render(scene, espCamCamera);
+                    const hdgDeg = Math.round(((THREE.MathUtils.radToDeg(-hexapodRoot.rotation.y - headPanGroup.rotation.y) % 360) + 360) % 360);
+                    const hdgStr = String(hdgDeg).padStart(3, '0');
+                    const hdgEl = document.getElementById('fpvHeadingText');
+                    if (hdgEl) hdgEl.textContent = 'HDG: ' + hdgStr + '°';
+                }
+            }
+
+            // =========================================================================
+            // 13. INITIALIZATION & WINDOW RESIZE HANDLER
+            // =========================================================================
+            function initStudio() {
+                try {
+                    initTelemetryUI();
+                    setupThreeScene();
+                    buildHexapodModel();
+                    setupControls();
+                    window.selectVariant('ultrasonic');
+
+                    window.addEventListener('resize', function() {
+                        if (!camera || !renderer) return;
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+
+                    animate();
+                } catch (err) {
+                    console.error('Hexapod IK Studio Initialization Error:', err);
+                }
+            }
+
+            if (document.readyState === 'complete' || document.readyState === 'interactive') {
+                initStudio();
             } else {
-                btn.className = "px-4 py-2 rounded-xl text-xs md:text-sm font-semibold bg-red-600 hover:bg-red-500 text-white shadow-lg transition-all flex items-center gap-2 glow-red";
-                icon.className = "fa-solid fa-play";
-                text.innerText = "AUTO MAJU";
+                window.addEventListener('DOMContentLoaded', initStudio);
             }
-        }
-
-        function updatePose() {
-            poseY = Number.parseFloat(document.getElementById('sliderBodyY').value);
-            posePitch = Number.parseFloat(document.getElementById('sliderPitch').value);
-            poseRoll = Number.parseFloat(document.getElementById('sliderRoll').value);
-
-            document.getElementById('valBodyY').innerText = `${poseY.toFixed(1)} cm`;
-            document.getElementById('valPitch').innerText = `${posePitch}°`;
-            document.getElementById('valRoll').innerText = `${poseRoll}°`;
-        }
-
-        function resetPose() {
-            document.getElementById('sliderBodyY').value = 0;
-            document.getElementById('sliderPitch').value = 0;
-            document.getElementById('sliderRoll').value = 0;
-            updatePose();
-        }
-
-        function togglePanel(name) {
-            const p = name === 'controls' ? document.getElementById('panelControls') : document.getElementById('panelTelemetry');
-            if (p) p.classList.toggle('hidden');
-        }
-
-        function selectMobileTab(tab) {
-            const pCtrl = document.getElementById('panelControls');
-            const pTelem = document.getElementById('panelTelemetry');
-            const pRemote = document.getElementById('panelRemote');
-
-            // Hide all by default on mobile
-            pCtrl.classList.add('hidden');
-            pTelem.classList.add('hidden');
-            pRemote.classList.add('hidden');
-
-            document.querySelectorAll('nav button').forEach(b => b.className = "flex flex-col items-center text-slate-400 text-xs");
-
-            if (tab === 'controls') {
-                pCtrl.classList.remove('hidden');
-                document.getElementById('tab-controls').className = "flex flex-col items-center text-orange-400 text-xs";
-            } else if (tab === 'telemetry') {
-                pTelem.classList.remove('hidden');
-                document.getElementById('tab-telemetry').className = "flex flex-col items-center text-cyan-400 text-xs";
-            } else if (tab === 'remote') {
-                pRemote.classList.remove('hidden');
-                document.getElementById('tab-remote').className = "flex flex-col items-center text-orange-400 text-xs";
-            } else {
-                document.getElementById('tab-3d').className = "flex flex-col items-center text-orange-400 text-xs";
-            }
-        }
-
-        // --- 9. KEYBOARD & TOUCH GAMEPAD INPUT LISTENERS ---
-        function setupInputs() {
-            window.addEventListener('keydown', (e) => {
-                if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') controlState.forward = 1;
-                if (e.key === 's' || e.key === 'S' || e.key === 'ArrowDown') controlState.forward = -1;
-                if (e.key === 'a' || e.key === 'A') controlState.strafe = -1;
-                if (e.key === 'd' || e.key === 'D') controlState.strafe = 1;
-                if (e.key === 'q' || e.key === 'Q' || e.key === 'ArrowLeft') controlState.turn = 1;
-                if (e.key === 'e' || e.key === 'E' || e.key === 'ArrowRight') controlState.turn = -1;
-            });
-
-            window.addEventListener('keyup', (e) => {
-                if (['w','W','ArrowUp','s','S','ArrowDown'].includes(e.key)) controlState.forward = 0;
-                if (['a','A','d','D'].includes(e.key)) controlState.strafe = 0;
-                if (['q','Q','ArrowLeft','e','E','ArrowRight'].includes(e.key)) controlState.turn = 0;
-            });
-
-            // Virtual D-Pad Touch/Mouse Bindings
-            const bindBtn = (id, actionKey, val) => {
-                const btn = document.getElementById(id);
-                if (!btn) return;
-                const start = (e) => { e.preventDefault(); controlState[actionKey] = val; btn.classList.add('active'); };
-                const end = (e) => { e.preventDefault(); controlState[actionKey] = 0; btn.classList.remove('active'); };
-
-                btn.addEventListener('mousedown', start);
-                btn.addEventListener('mouseup', end);
-                btn.addEventListener('mouseleave', end);
-                btn.addEventListener('touchstart', start);
-                btn.addEventListener('touchend', end);
-            };
-
-            bindBtn('btnFwd', 'forward', 1);
-            bindBtn('btnBwd', 'forward', -1);
-            bindBtn('btnLeft', 'strafe', -1);
-            bindBtn('btnRight', 'strafe', 1);
-            bindBtn('btnTurnLeft', 'turn', 1);
-            bindBtn('btnTurnRight', 'turn', -1);
-
-            // Speed & Step sliders
-            document.getElementById('sliderSpeed').addEventListener('input', (e) => {
-                stepSpeed = Number.parseFloat(e.target.value);
-                document.getElementById('valSpeed').innerText = `${stepSpeed.toFixed(1)}x`;
-            });
-            document.getElementById('sliderStepHeight').addEventListener('input', (e) => {
-                stepHeight = Number.parseFloat(e.target.value);
-                document.getElementById('valStepHeight').innerText = `${stepHeight.toFixed(1)} cm`;
-            });
-        }
-
-        function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        }
-
-        // --- 10. MAIN ANIMATION LOOP ---
-        let lastTime = performance.now();
-        let frameCount = 0;
-        let fpsTimer = 0;
-
-        function animate() {
-            requestAnimationFrame(animate);
-
-            const now = performance.now();
-            const deltaTime = Math.min((now - lastTime) / 1000, 0.05); // Cap delta to avoid jumps
-            lastTime = now;
-
-            // FPS Counter
-            frameCount++;
-            fpsTimer += deltaTime;
-            if (fpsTimer >= 1.0) {
-                document.getElementById('fpsVal').innerText = frameCount;
-                frameCount = 0;
-                fpsTimer = 0;
-            }
-
-            // Update Robot Kinematics & Gait Animation
-            updateGaitAndIK(deltaTime);
-
-            // Smooth Camera Follow
-            controls.target.lerp(hexapodGroup.position, 0.05);
-            controls.update();
-
-            renderer.render(scene, camera);
-        }
-
-        // --- INITIALIZATION ON LOAD ---
-        window.onload = function() {
-            initTelemetryUI();
-            initScene();
-            setupInputs();
-            animate();
-        };
+        })();
     </script>
 </body>
 </html>
