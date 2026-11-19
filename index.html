@@ -2,15 +2,18 @@
 <html lang="id" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#101722">
     <title>Hexapod IK Studio — 18 & 19-Servo 3D Simulation</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts: Inter & JetBrains Mono -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Three.js r128 & OrbitControls -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"
+        integrity="sha384-CI3ELBVUz9XQO+97x6nwMDPosPR5XvsxW2ua7N1Xeygeh1IxtgqtCkGfQY9WWdHu" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"
+        integrity="sha384-wagZhIFgY4hD+7awjQjR4e2E294y6J2HSnd8eTNc15ZubTeQeVRZwhQJ+W6hnBsf" crossorigin="anonymous"></script>
 
     <style>
         * {
@@ -32,26 +35,10 @@
             font-family: 'JetBrains Mono', monospace;
             font-variant-numeric: tabular-nums;
         }
-        #canvas-container {
-            position: fixed;
-            inset: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 1;
-            touch-action: none;
-        }
+
         /* Frosted Studio Glassmorphism */
-        .studio-glass {
-            background: rgba(10, 15, 29, 0.78);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(148, 163, 184, 0.16);
-            box-shadow: 0 14px 38px rgba(0, 0, 0, 0.62), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-        }
-        .studio-card {
-            background: rgba(15, 23, 42, 0.68);
-            border: 1px solid rgba(148, 163, 184, 0.12);
-        }
+
+
         /* Custom Thin Scrollbar */
         ::-webkit-scrollbar {
             width: 4px;
@@ -68,27 +55,8 @@
             background: rgba(239, 68, 68, 0.75);
         }
         /* Custom Precision Range Sliders */
-        input[type="range"].studio-slider {
-            -webkit-appearance: none;
-            appearance: none;
-            height: 5px;
-            background: rgba(30, 41, 59, 0.95);
-            border-radius: 999px;
-            outline: none;
-            border: 1px solid rgba(71, 85, 105, 0.45);
-        }
-        input[type="range"].studio-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 15px;
-            height: 15px;
-            border-radius: 50%;
-            background: #ef4444;
-            cursor: pointer;
-            box-shadow: 0 0 10px rgba(239, 68, 68, 0.75);
-            border: 2px solid #f8fafc;
-            transition: transform 0.12s ease, background-color 0.12s ease;
-        }
+
+
         input[type="range"].studio-slider::-webkit-slider-thumb:hover {
             transform: scale(1.16);
         }
@@ -98,29 +66,348 @@
         }
         /* Tactile Gamepad D-Pad Buttons */
         .pad-btn {
-            transition: transform 0.08s ease, background-color 0.1s ease, border-color 0.1s ease, box-shadow 0.1s ease;
             touch-action: none;
         }
         .pad-btn:hover {
             background: rgba(30, 41, 59, 0.95);
             border-color: rgba(148, 163, 184, 0.4);
         }
-        .pad-btn:active, .pad-btn.active-key {
+        body .pad-btn:active, body .pad-btn.active-key {
             transform: scale(0.92);
-            background: rgba(239, 68, 68, 0.36) !important;
-            border-color: #f87171 !important;
-            color: #ffffff !important;
+            background: #991b1b;
+            border-color: #f87171;
+            color: #ffffff;
             box-shadow: 0 0 16px rgba(239, 68, 68, 0.5);
         }
+
+        :root {
+            color-scheme: dark;
+            --surface: #142030;
+            --line: #2b394b;
+            --muted: #9baabd;
+            --accent: #ed8068;
+            --header-bottom: 104px;
+            --stage-left: 304px;
+            --stage-right: 280px;
+            --stage-bottom: 176px;
+        }
+        body { background: #101722; }
+        button { -webkit-user-select: none; user-select: none; cursor: pointer; }
+        button:focus-visible, input:focus-visible {
+            outline: 2px solid #ed8068;
+            outline-offset: 4px;
+        }
+        .studio-glass {
+            background: rgba(20, 32, 48, 0.97);
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+            border: 1px solid rgba(148, 163, 184, 0.16);
+            box-shadow: 0 8px 24px #050a1226;
+            border-color: var(--line);
+        }
+        .studio-card {
+            background: #1a283a;
+            border: 1px solid rgba(148, 163, 184, 0.12);
+            border-color: #2b394b;
+        }
+        #topHeaderBar {
+            inset: max(12px, env(safe-area-inset-top)) 16px auto;
+            display: grid;
+            grid-template-columns: minmax(218px, 1fr) auto auto;
+            gap: 20px;
+            padding: 14px 18px;
+            border-radius: 18px;
+        }
+        .studio-brand > div:first-child {
+            width: 38px;
+            height: 38px;
+            border: 1px solid #ed806850;
+            background: #ed80681a;
+            color: var(--accent);
+            box-shadow: none;
+        }
+        .studio-brand > div:first-child svg { color: var(--accent); }
+        .studio-brand h1 { font-size: 19px; letter-spacing: -0.7px; font-weight: 700; }
+        .brand-light { color: var(--muted); font-weight: 400; }
+        .studio-brand p { display: block; font-size: 10px; margin-top: 3px; }
+        #badgeServoCount { font-size: 9px; padding: 3px 6px; border-color: #ed806840; color: #f1b3a4; background: #252834; }
+        #fpsCounter { position: fixed; bottom: 27px; left: calc(var(--stage-left) + 2px); background: transparent; border: 0; font-size: 10px; color: var(--muted); }
+        .variant-switcher { margin: 0; min-inline-size: 0; display: grid; grid-template-columns: repeat(4, 1fr); padding: 4px; gap: 3px; background: #0c1420; border: 1px solid var(--line); border-radius: 12px; }
+        .variant-switcher button { padding: 10px 9px; min-height: 40px; font-size: 10px; color: #acb9c9; background: transparent; box-shadow: none; border: 1px solid transparent; }
+        .variant-switcher button svg { width: 14px; }
+        .variant-switcher button[aria-pressed="true"] { background: #2c3b4f; color: #fff; border-color: #4a5a70; }
+        .studio-toolbar { display: flex; align-items: center; gap: 7px; }
+        .studio-toolbar > button { min-height: 40px; border-radius: 10px; font-size: 11px; box-shadow: none; }
+        #btnAutoWalk { background: #ed8068; color: #1b1820; border: 1px solid #ed8068; }
+        #btnAutoWalk[aria-pressed="true"] { background: #b5e1ca; border-color: #b5e1ca; color: #142b20; }
+        #btnToggleLabels { background: #1a283a; color: #a8b5c6; border: 1px solid var(--line); }
+        #btnToggleLabels[aria-pressed="true"] { background: #40382b; border-color: #a58a55; color: #f4da9e; }
+        #btnCleanHud { background: #1a283a; border: 1px solid var(--line); }
+        #sensorStatusBadge { display: none; }
+        #canvas-container {
+            position: fixed;
+            inset: 0;
+            width: auto;
+            height: auto;
+            z-index: 1;
+            touch-action: none;
+            top: var(--header-bottom);
+            right: var(--stage-right);
+            bottom: var(--stage-bottom);
+            left: var(--stage-left);
+            overflow: hidden;
+            border: 1px solid #293649;
+            border-radius: 20px;
+            background: #111d2d;
+        }
+        #canvas-container canvas { display: block; width: 100%; height: 100%; }
+        .viewport-heading, .viewport-guide { position: absolute; z-index: 2; left: 20px; right: 20px; display: flex; align-items: center; justify-content: space-between; pointer-events: none; }
+        .viewport-heading { top: 19px; gap: 8px; }
+        .workspace-label { font: 500 10px 'JetBrains Mono', monospace; letter-spacing: 1.8px; color: #a5b4c7; }
+        .simulation-badge { display: flex; align-items: center; gap: 6px; font-size: 10px; color: #b5c4d5; padding: 5px 8px; border: 1px solid #3b4a5a; border-radius: 6px; background: #142030b3; }
+        .simulation-badge > span { width: 5px; height: 5px; background: #b5e1ca; border-radius: 50%; }
+        .viewport-guide { bottom: 15px; font-size: 10px; color: #91a2b7; }
+        .viewport-guide button { pointer-events: auto; padding: 7px 0 7px 12px; color: #cbd5e1; }
+        .viewport-guide button span { margin-left: 5px; color: var(--accent); }
+        #leftControlDrawer, #rightTelemetryDrawer {
+            top: var(--header-bottom);
+            bottom: 16px;
+            display: flex;
+            border-radius: 18px;
+            width: 272px;
+        }
+        #leftControlDrawer { left: 16px; right: auto; }
+        #rightTelemetryDrawer { right: 16px; left: auto; width: 248px; }
+        #leftControlDrawer > div:first-child, #rightTelemetryDrawer > div:first-child { padding: 16px 14px; min-height: 56px; border-color: var(--line); }
+        #leftDrawerBody, #rightTelemetryDrawer > div:nth-child(2) { padding: 12px; min-height: 0; overscroll-behavior: contain; scrollbar-gutter: stable; }
+        #leftDrawerBody { display: flex; flex-direction: column; gap: 12px; }
+        #leftDrawerBody > * { margin-top: 0; padding: 14px 12px; }
+        #leftDrawerBody .studio-card > div:first-child { margin-bottom: 10px; }
+        #leftDrawerBody label { font-size: 11px; color: #b7c4d4; }
+        #leftDrawerBody input { margin: 12px 0; }
+        input[type="range"].studio-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            background: rgba(30, 41, 59, 0.95);
+            border-radius: 999px;
+            outline: none;
+            border: 1px solid rgba(71, 85, 105, 0.45);
+            outline-offset: 7px;
+        }
+        input[type="range"].studio-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #ed8068;
+            cursor: pointer;
+            box-shadow: none;
+            border: 3px solid #f5d1c9;
+        }
+        input[type="range"].studio-slider::-moz-range-thumb { width: 15px; height: 15px; border-radius: 50%; background: #ed8068; border: 3px solid #f5d1c9; }
+        #leftDrawerBody button[id^="gait-"], #leftDrawerBody button[id^="terrain-"] { min-height: 39px; background: #111d2d; border: 1px solid #344256; color: #aebcd0; font-size: 11px; font-weight: 500; box-shadow: none; }
+        #leftDrawerBody button[aria-pressed="true"] { background: #31323f; border-color: #ed806888; color: #f7c0b2; }
+        #servoTelemetryList > div > div:last-child > div > div:first-child { flex-direction: column; align-items: flex-start; gap: 4px; }
+        #servoTelemetryList > div > div:last-child > div > div:first-child > span:first-child { font-size: 8px; letter-spacing: 0.3px; }
+        #servoTelemetryList > div > div:last-child > div > div:first-child > span:last-child { font-size: 11px; line-height: 1.2; }
+        #rightTelemetryDrawer > div:first-child > div > span { display: none; }
+        #telemetryHeaderTitle { font-size: 10px; white-space: nowrap; }
+        #servoTelemetryList > div { padding: 11px; border-color: #2b394b; background: #1a283a; }
+
+        .sheet-close { display: none; }
+        #collapseLeft, #collapseRight { width: 30px; height: 30px; background: #233247; }
+        #btnExpandLeft, #btnExpandRight { top: var(--header-bottom); padding: 12px; border-radius: 12px; display: none; }
+        body[data-left-collapsed="true"] { --stage-left: 16px; }
+        body[data-right-collapsed="true"] { --stage-right: 16px; }
+        body[data-left-collapsed="true"] #leftControlDrawer, body[data-right-collapsed="true"] #rightTelemetryDrawer { display: none; }
+        body[data-left-collapsed="true"] #btnExpandLeft, body[data-right-collapsed="true"] #btnExpandRight { display: flex; z-index: 25; }
+        #gamepadPillBar { left: calc(var(--stage-left) + (100% - var(--stage-left) - var(--stage-right)) / 2); bottom: 20px; padding: 14px 20px; gap: 22px; border-radius: 20px; width: 410px; max-width: calc(100% - 24px); justify-content: space-between; }
+        .movement-pad { display: grid; grid-template-columns: repeat(3, 44px); grid-template-rows: repeat(3, 38px); gap: 3px; align-items: center; }
+        .forward-backward { display: contents; }
+        #btnForward { grid-column: 2; grid-row: 1; }
+        #btnBackward { grid-column: 2; grid-row: 3; }
+        #btnLeft { grid-column: 1; grid-row: 2; }
+        #btnRight { grid-column: 3; grid-row: 2; }
+        #gamepadPillBar .pad-btn { width: 44px; height: 44px; border-radius: 11px; background: #223248; border-color: #40516a; color: #dce5f0; box-shadow: 0 2px 0 #09101c; }
+        #gamepadPillBar .pad-btn span { font-size: 8px; margin-top: 1px; }
+        #gamepadPillBar .pad-btn:hover { background: #30435d; }
+        body #gamepadPillBar .pad-btn:active, body #gamepadPillBar .pad-btn.active-key { background: #995343; border-color: #f8c6b9; color: #fff; box-shadow: none; }
+        .drive-actions { display: flex; flex-direction: column; gap: 8px; }
+        .drive-actions button { min-height: 38px; min-width: 60px; border-radius: 9px; font-size: 10px; }
+        #padBtnAuto { background: #203c32; border-color: #427760; color: #b5e1ca; }
+        #padBtnAuto[aria-pressed="true"] { background: #b5e1ca; color: #122e21; }
+        #padBtnStop { background: #402932; border-color: #7d4954; color: #ffd0d3; }
+        .rotation-pad { display: grid; grid-template-columns: repeat(2, 44px); gap: 7px; }
+        #gamepadPillBar #btnResetCamera { grid-column: 1 / -1; width: 95px; height: 38px; flex-direction: row; gap: 6px; color: #adc9de; }
+        #fpvCameraWindow { top: calc(var(--header-bottom) + 52px); left: calc(var(--stage-left) + 14px); width: 180px; padding: 7px; border-color: #50677c; border-radius: 12px; }
+        #mobileBottomDock { display: none; }
+        body[data-clean-hud="true"] { --stage-left: 0px; --stage-right: 0px; --stage-bottom: 0px; }
+        body[data-clean-hud="true"] #canvas-container { inset: 0; border: 0; border-radius: 0; }
+        body[data-clean-hud="true"] #topHeaderBar,
+        body[data-clean-hud="true"] #leftControlDrawer,
+        body[data-clean-hud="true"] #rightTelemetryDrawer,
+        body[data-clean-hud="true"] #gamepadPillBar,
+        body[data-clean-hud="true"] #mobileBottomDock,
+        body[data-clean-hud="true"] #fpvCameraWindow,
+        body[data-clean-hud="true"] #btnExpandLeft,
+        body[data-clean-hud="true"] #btnExpandRight,
+        body[data-clean-hud="true"] .viewport-heading,
+        body[data-clean-hud="true"] .viewport-guide { display: none; }
+        @media (max-width: 1279px) {
+            #topHeaderBar { grid-template-columns: 1fr auto; gap: 12px; }
+            .variant-switcher { grid-column: 1 / -1; grid-row: 2; }
+            .studio-toolbar { grid-column: 2; grid-row: 1; }
+            .studio-toolbar > button > span { display: none; }
+            .studio-toolbar #textAutoWalk { display: inline; }
+            .variant-switcher button { padding: 7px 10px; }
+        }
+        @media (max-width: 1023px) {
+            body { --stage-left: 12px; --stage-right: 12px; --stage-bottom: calc(244px + env(safe-area-inset-bottom)); --sheet-height: min(48dvh, calc(100dvh - var(--header-bottom) - 260px)); }
+            #topHeaderBar { left: 12px; right: 12px; padding: 12px; gap: 10px; border-radius: 16px; }
+            #canvas-container { border-radius: 16px; }
+            .studio-brand h1 { font-size: 17px; }
+            .studio-brand p { display: none; }
+            .studio-brand > div:first-child { width: 32px; height: 32px; border-radius: 10px; }
+            #badgeServoCount { display: none; }
+            #fpsCounter { display: none; }
+            .studio-toolbar { gap: 6px; }
+            .studio-toolbar > button { min-height: 36px; padding: 8px; font-size: 10px; }
+            #btnCleanHud { display: none; }
+            .variant-switcher { gap: 2px; border-radius: 10px; }
+            .variant-switcher button { min-width: 0; min-height: 36px; font-size: 10px; padding: 7px 4px; gap: 4px; }
+            .variant-switcher button svg { display: none; }
+            .viewport-heading, .viewport-guide { left: 14px; right: 14px; }
+            .viewport-heading { top: 14px; }
+            .workspace-label { font-size: 9px; letter-spacing: 1.1px; }
+            .simulation-badge { font-size: 9px; padding: 4px 6px; }
+            .viewport-guide { bottom: 9px; font-size: 9px; }
+            .viewport-guide > span { max-width: 55%; }
+            #leftControlDrawer, #rightTelemetryDrawer { display: none; top: auto; left: 12px; right: 12px; width: auto; height: var(--sheet-height); bottom: calc(84px + env(safe-area-inset-bottom)); border-radius: 20px; z-index: 25; }
+            #leftControlDrawer > div:first-child, #rightTelemetryDrawer > div:first-child { min-height: 52px; padding: 10px 14px; }
+            .sheet-close { display: flex; align-items: center; justify-content: center; min-width: 40px; height: 36px; font-size: 25px; color: #b7c4d4; background: #233247; border-radius: 10px; margin-left: auto; }
+            #leftDrawerBody { gap: 10px; }
+            #leftDrawerBody button[id^="gait-"], #leftDrawerBody button[id^="terrain-"] { min-height: 44px; }
+            #gamepadPillBar { left: 50%; bottom: calc(86px + env(safe-area-inset-bottom)); width: 380px; min-height: 144px; padding: 14px 12px; gap: 8px; border-radius: 18px; }
+            #mobileBottomDock { display: grid; bottom: max(12px, env(safe-area-inset-bottom)); left: 12px; right: 12px; min-height: 62px; padding: 5px; border-radius: 16px; gap: 4px; }
+            #mobileBottomDock button { min-height: 50px; background: transparent; border: 1px solid transparent; color: #a0b0c4; font-size: 10px; gap: 4px; }
+            #mobileBottomDock button[aria-current="page"] { background: #2a2a36; border-color: #ed806840; color: #f5b7a7; }
+            body[data-mobile-tab="controls"], body[data-mobile-tab="telemetry"] { --stage-bottom: calc(var(--sheet-height) + 96px + env(safe-area-inset-bottom)); }
+            body[data-mobile-tab="controls"] #leftControlDrawer, body[data-mobile-tab="telemetry"] #rightTelemetryDrawer { display: flex; }
+            body[data-mobile-tab="controls"] #gamepadPillBar, body[data-mobile-tab="telemetry"] #gamepadPillBar, body[data-mobile-tab="full3d"] #gamepadPillBar { display: none; }
+            body[data-mobile-tab="full3d"] { --stage-bottom: calc(86px + env(safe-area-inset-bottom)); }
+            #fpvCameraWindow { left: auto; right: 24px; top: calc(var(--header-bottom) + 49px); width: 128px; z-index: 15; }
+            #fpvCameraWindow > div:first-child { flex-wrap: wrap; gap: 5px; }
+            #fpvCameraWindow > div:first-child > div span:last-child { display: none; }
+            body #btnExpandLeft, body #btnExpandRight { display: none; }
+            body[data-clean-hud="true"] #leftControlDrawer, body[data-clean-hud="true"] #rightTelemetryDrawer, body[data-clean-hud="true"] #mobileBottomDock { display: none; }
+        }
+        @media (max-width: 359px) {
+            .studio-brand h1 { font-size: 15px; }
+            .studio-brand .brand-light { display: none; }
+            .studio-brand { gap: 7px; }
+            .studio-brand > div:first-child { width: 28px; height: 28px; }
+            #topHeaderBar { padding: 10px; gap: 8px; }
+            .variant-switcher button { font-size: 9px; }
+            #gamepadPillBar { padding: 14px 10px; gap: 7px; }
+            .movement-pad { grid-template-columns: repeat(3, 40px); grid-template-rows: repeat(3, 36px); }
+            #gamepadPillBar .pad-btn { width: 40px; height: 40px; }
+            .rotation-pad { grid-template-columns: repeat(2, 38px); }
+            #gamepadPillBar #btnResetCamera { width: 83px; }
+            .drive-actions button { min-width: 52px; padding-left: 8px; padding-right: 8px; }
+        }
+        @media (max-width: 1023px) and (max-height: 500px) and (orientation: landscape) {
+            body { --stage-right: 324px; --stage-bottom: 86px; --sheet-height: calc(100dvh - var(--header-bottom) - 96px); }
+            #topHeaderBar { grid-template-columns: auto 1fr auto; padding: 8px 12px; }
+            .variant-switcher { grid-column: 2; grid-row: 1; }
+            .studio-toolbar { grid-column: 3; }
+            .studio-brand h1 { font-size: 15px; }
+            .studio-brand > div:first-child { display: none; }
+             .movement-pad { grid-template-columns: repeat(3, 40px); grid-template-rows: repeat(3, 36px); }
+            #gamepadPillBar .pad-btn { width: 40px; height: 40px; }
+            .rotation-pad { grid-template-columns: repeat(2, 38px); }
+            #gamepadPillBar #btnResetCamera { width: 83px; }
+            .drive-actions button { min-width: 52px; padding-left: 8px; padding-right: 8px; }
+            #gamepadPillBar { left: auto; right: 12px; transform: none; width: 300px; bottom: 86px; padding: 10px; min-height: 0; }
+            #leftControlDrawer, #rightTelemetryDrawer { left: auto; width: 300px; }
+            body[data-mobile-tab="controls"], body[data-mobile-tab="telemetry"] { --stage-bottom: 86px; }
+            body[data-mobile-tab="full3d"] { --stage-right: 12px; }
+            .viewport-guide > span { display: none; }
+            #fpvCameraWindow { display: none; }
+        }
+
+        @media (min-width: 1024px) {
+            body { --stage-bottom: 16px; }
+            #topHeaderBar {
+                top: 10px;
+                padding: 8px 12px;
+                grid-template-columns: minmax(154px, 1fr) minmax(350px, 1.3fr) auto;
+                gap: 12px;
+                border-radius: 13px;
+            }
+            .studio-brand { gap: 8px; }
+            .studio-brand > div:first-child { width: 30px; height: 30px; border-radius: 9px; }
+            .studio-brand h1 { font-size: 16px; letter-spacing: -0.5px; }
+            .studio-brand p { display: none; }
+            .variant-switcher { grid-column: 2; grid-row: 1; padding: 3px; border-radius: 9px; }
+            .variant-switcher button { min-height: 30px; padding: 6px; font-size: 10px; gap: 5px; }
+            .studio-toolbar { grid-column: 3; grid-row: 1; gap: 6px; }
+            .studio-toolbar > button { min-height: 34px; padding: 8px; }
+            .studio-toolbar > button > span { display: none; }
+            .studio-toolbar #textAutoWalk { display: inline; font-size: 10px; }
+            #badgeServoCount { display: none; }
+            #gamepadPillBar { bottom: 28px; width: 370px; min-height: 0; padding: 8px 12px; gap: 12px; border-radius: 14px; background: #142030f2; }
+            .movement-pad { grid-template-columns: repeat(3, 30px); grid-template-rows: repeat(2, 30px); gap: 3px; }
+            #gamepadPillBar .pad-btn { width: 30px; height: 30px; border-radius: 8px; }
+            #gamepadPillBar .pad-btn svg { width: 13px; height: 13px; }
+            #gamepadPillBar .pad-btn span { display: none; }
+            #btnLeft { grid-row: 1 / 3; }
+            #btnRight { grid-row: 1 / 3; }
+            #btnBackward { grid-row: 2; }
+            .drive-actions { flex-direction: row; gap: 6px; }
+            .drive-actions button { min-height: 32px; min-width: 48px; padding: 6px 8px; }
+            .rotation-pad { grid-template-columns: repeat(3, 30px); gap: 5px; }
+            #gamepadPillBar #btnResetCamera { grid-column: auto; width: 30px; height: 30px; }
+            .viewport-guide { bottom: 96px; }
+            #fpsCounter { bottom: 32px; z-index: 22; }
+        }
+        @media (min-width: 1024px) and (max-width: 1150px) {
+            #topHeaderBar { grid-template-columns: 154px minmax(320px, 1fr) auto; gap: 8px; }
+            .studio-brand .brand-light { display: none; }
+            .variant-switcher button { font-size: 9px; }
+        }
+
         /* Smooth Drawer Transitions */
-        .drawer-transition {
-            transition: transform 0.26s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease;
+        @media (prefers-reduced-motion: no-preference) {
+            input[type="range"].studio-slider::-webkit-slider-thumb {
+                transition: transform 0.12s ease, background-color 0.12s ease;
+            }
+            .pad-btn {
+                transition: transform 0.08s ease, background-color 0.1s ease, border-color 0.1s ease, box-shadow 0.1s ease;
+            }
+            .drawer-transition {
+                transition: transform 0.26s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease;
+            }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            html body *, html body *::before, html body *::after {
+                transition: none;
+                animation: none;
+            }
+            input[type="range"].studio-slider::-webkit-slider-thumb:hover,
+            body .pad-btn:active, body .pad-btn.active-key {
+                transform: none;
+            }
         }
     </style>
 </head>
 <body>
     <!-- Fullscreen 3D WebGL Viewport -->
-    <div id="canvas-container"></div>
+    <main id="canvas-container" aria-label="Animasi 3D hexapod">
+        <div class="viewport-heading"><span class="workspace-label">RUANG GERAK</span><span class="simulation-badge"><span></span> Animasi web</span></div>
+        <div class="viewport-guide"><span>Geser untuk memutar tampilan</span><button onclick="resetCameraView()" title="Kembalikan sudut kamera">Reset kamera <span aria-hidden="true">↗</span></button></div>
+    </main>
 
     <!-- RESTORE HUD FLOATING PILL (Shown only when Clean HUD mode is active) -->
     <button id="btnRestoreHud" onclick="toggleCleanHud()" class="hidden fixed top-3 right-3 z-40 studio-glass px-3.5 py-2 rounded-full text-xs font-bold text-slate-100 hover:border-red-400/60 transition flex items-center gap-2 shadow-2xl">
@@ -134,7 +421,7 @@
     <!-- 1. TOP FLOATING HEADER BAR -->
     <header id="topHeaderBar" class="fixed top-2.5 left-2.5 right-2.5 z-30 studio-glass rounded-2xl px-3 py-2 lg:px-4 lg:py-2.5 flex flex-wrap lg:flex-nowrap items-center justify-between gap-2 drawer-transition">
         <!-- Left Brand, Servo Count Badge & FPS -->
-        <div class="flex items-center gap-2.5 min-w-0">
+        <div class="studio-brand flex items-center gap-2.5 min-w-0">
             <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-red-500 via-orange-500 to-amber-500 flex items-center justify-center shadow-lg shadow-red-600/25 shrink-0">
                 <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="3.5"/>
@@ -144,7 +431,7 @@
             <div class="min-w-0">
                 <div class="flex items-center gap-1.5 sm:gap-2">
                     <h1 class="text-xs sm:text-sm lg:text-[15px] font-extrabold tracking-tight text-white truncate">
-                        HEXAPOD IK STUDIO
+                        Hexapod <span class="brand-light">studio</span>
                     </h1>
                     <span id="badgeServoCount" class="px-2 py-0.5 text-[10px] mono-tabular font-bold rounded-full bg-red-500/20 text-red-300 border border-red-500/40 shrink-0">
                         18 SERVO
@@ -155,13 +442,13 @@
                     </span>
                 </div>
                 <p class="text-[11px] text-slate-400 truncate hidden xl:block">
-                    C²-Continuous Inverse Kinematics • 4 Robot Variants &amp; Raycast Terrain Engine
+                    Eksplorasi gerakan robot berkaki enam
                 </p>
             </div>
         </div>
 
         <!-- Center Quick 4-Button Robot Variant Switcher -->
-        <div class="order-3 lg:order-2 w-full lg:w-auto flex items-center gap-1 bg-slate-950/80 p-1 rounded-xl border border-slate-800/90 overflow-x-auto">
+        <fieldset class="variant-switcher" aria-label="Varian robot">
             <button onclick="selectVariant('ultrasonic')" id="hdr-var-ultrasonic" class="flex-1 lg:flex-initial px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition bg-red-600 text-white shadow whitespace-nowrap flex items-center justify-center gap-1.5">
                 <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h3l2-6 4 12 4-12 2 6h5"/></svg>
                 <span>Ultrasonic</span>
@@ -172,16 +459,16 @@
             </button>
             <button onclick="selectVariant('ultrasonic_head')" id="hdr-var-ultrasonic_head" class="flex-1 lg:flex-initial px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition text-slate-300 hover:bg-slate-800/90 whitespace-nowrap flex items-center justify-center gap-1.5">
                 <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="8" width="18" height="10" rx="2"/><circle cx="8" cy="13" r="2"/><circle cx="16" cy="13" r="2"/><path d="M12 4v4"/></svg>
-                <span>Ultrasonic + Head</span>
+                <span>Sonar + Head</span>
             </button>
             <button onclick="selectVariant('espcam_head')" id="hdr-var-espcam_head" class="flex-1 lg:flex-initial px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition text-slate-300 hover:bg-slate-800/90 whitespace-nowrap flex items-center justify-center gap-1.5">
                 <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
-                <span>ESP32-CAM + Head</span>
+                <span>CAM + Head</span>
             </button>
-        </div>
+        </fieldset>
 
         <!-- Right Live Sensor Status Badge & Action Toggles -->
-        <div class="order-2 lg:order-3 flex items-center gap-1.5 shrink-0">
+        <div class="studio-toolbar">
             <!-- Live Sensor Status Pill -->
             <div id="sensorStatusBadge" class="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-cyan-950/65 border border-cyan-500/35 text-[11px] mono-tabular font-semibold text-cyan-300">
                 <span id="sensorStatusDot" class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
@@ -214,14 +501,15 @@
     </header>
 
     <!-- 2. LEFT COLLAPSIBLE CONTROL DRAWER (290px wide on desktop, slide-up drawer on mobile) -->
-    <aside id="leftControlDrawer" class="fixed top-[6.25rem] lg:top-[4.35rem] left-2.5 right-2.5 lg:right-auto lg:left-2.5 bottom-[4.4rem] lg:bottom-3 lg:w-[290px] z-20 studio-glass rounded-2xl flex flex-col overflow-hidden drawer-transition hidden lg:flex">
+    <aside id="leftControlDrawer" aria-label="Pengaturan robot" class="fixed top-[6.25rem] lg:top-[4.35rem] left-2.5 right-2.5 lg:right-auto lg:left-2.5 bottom-[4.4rem] lg:bottom-3 lg:w-[290px] z-20 studio-glass rounded-2xl flex flex-col overflow-hidden drawer-transition hidden lg:flex">
         <!-- Drawer Header -->
         <div class="px-3.5 py-2.5 border-b border-slate-800/80 flex items-center justify-between shrink-0">
             <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-200 flex items-center gap-1.5">
                 <svg class="w-3.5 h-3.5 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/></svg>
-                Studio Controls
+                Pengaturan robot
             </span>
-            <button onclick="toggleDesktopLeftDrawer()" title="Ciutkan / Perluas Panel Kontrol" class="hidden lg:flex w-6 h-6 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-slate-300 items-center justify-center transition">
+            <button class="sheet-close" onclick="setMobileTab('remote')" aria-label="Tutup pengaturan">×</button>
+            <button id="collapseLeft" onclick="toggleDesktopLeftDrawer()" title="Ciutkan / Perluas Panel Kontrol" class="hidden lg:flex w-6 h-6 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-slate-300 items-center justify-center transition">
                 <svg id="leftCollapseIcon" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="15 18 9 12 15 6"/></svg>
             </button>
         </div>
@@ -288,7 +576,7 @@
                 </div>
                 <div class="space-y-1">
                     <div class="flex justify-between text-xs text-slate-300">
-                        <span>Pan Angle</span>
+                        <label for="sliderHeadPan">Pan Angle</label>
                         <span id="valHeadPan" class="mono-tabular text-purple-300 font-bold">0°</span>
                     </div>
                     <input type="range" id="sliderHeadPan" min="-65" max="65" step="1" value="0" class="w-full studio-slider violet-thumb" oninput="onManualHeadPan(this.value)">
@@ -318,7 +606,7 @@
                 <!-- Tinggi Bodi (1.2 - 3.0 cm) -->
                 <div class="space-y-1">
                     <div class="flex justify-between text-xs text-slate-300">
-                        <span>Tinggi Bodi</span>
+                        <label for="sliderHeight">Tinggi Bodi</label>
                         <span id="valBodyHeight" class="mono-tabular text-red-400 font-bold">2.10 cm</span>
                     </div>
                     <input type="range" id="sliderHeight" min="1.2" max="3.0" step="0.05" value="2.1" class="w-full studio-slider" oninput="updatePoseParam()">
@@ -327,7 +615,7 @@
                 <!-- Pitch (-18 to +18 deg) -->
                 <div class="space-y-1">
                     <div class="flex justify-between text-xs text-slate-300">
-                        <span>Pitch</span>
+                        <label for="sliderPitch">Pitch</label>
                         <span id="valPitch" class="mono-tabular text-red-400 font-bold">0°</span>
                     </div>
                     <input type="range" id="sliderPitch" min="-18" max="18" step="1" value="0" class="w-full studio-slider" oninput="updatePoseParam()">
@@ -336,7 +624,7 @@
                 <!-- Roll (-18 to +18 deg) -->
                 <div class="space-y-1">
                     <div class="flex justify-between text-xs text-slate-300">
-                        <span>Roll</span>
+                        <label for="sliderRoll">Roll</label>
                         <span id="valRoll" class="mono-tabular text-red-400 font-bold">0°</span>
                     </div>
                     <input type="range" id="sliderRoll" min="-18" max="18" step="1" value="0" class="w-full studio-slider" oninput="updatePoseParam()">
@@ -345,7 +633,7 @@
                 <!-- Kecepatan Jalan (0.3x - 2.2x) -->
                 <div class="space-y-1 pt-1 border-t border-slate-800/70">
                     <div class="flex justify-between text-xs text-slate-300">
-                        <span>Kecepatan Jalan</span>
+                        <label for="sliderSpeed">Kecepatan Jalan</label>
                         <span id="valSpeed" class="mono-tabular text-emerald-400 font-bold">1.0x</span>
                     </div>
                     <input type="range" id="sliderSpeed" min="0.3" max="2.2" step="0.1" value="1.0" class="w-full studio-slider" oninput="updateGaitParam()">
@@ -354,7 +642,7 @@
                 <!-- Tinggi Langkah (0.3 - 1.4 cm) -->
                 <div class="space-y-1">
                     <div class="flex justify-between text-xs text-slate-300">
-                        <span>Tinggi Langkah</span>
+                        <label for="sliderStepHeight">Tinggi Langkah</label>
                         <span id="valStepHeight" class="mono-tabular text-emerald-400 font-bold">0.85 cm</span>
                     </div>
                     <input type="range" id="sliderStepHeight" min="0.3" max="1.4" step="0.05" value="0.85" class="w-full studio-slider" oninput="updateGaitParam()">
@@ -370,7 +658,7 @@
     </button>
 
     <!-- 3. RIGHT COLLAPSIBLE TELEMETRY DRAWER (275px wide on desktop, slide-up drawer on mobile) -->
-    <aside id="rightTelemetryDrawer" class="fixed top-[6.25rem] lg:top-[4.35rem] left-2.5 right-2.5 lg:left-auto lg:right-2.5 bottom-[4.4rem] lg:bottom-3 lg:w-[275px] z-20 studio-glass rounded-2xl flex flex-col overflow-hidden drawer-transition hidden lg:flex">
+    <aside id="rightTelemetryDrawer" aria-labelledby="telemetryHeaderTitle" class="fixed top-[6.25rem] lg:top-[4.35rem] left-2.5 right-2.5 lg:left-auto lg:right-2.5 bottom-[4.4rem] lg:bottom-3 lg:w-[275px] z-20 studio-glass rounded-2xl flex flex-col overflow-hidden drawer-transition hidden lg:flex">
         <!-- Telemetry Header with Collapse Button -->
         <div class="px-3.5 py-2.5 border-b border-slate-800/80 flex items-center justify-between shrink-0">
             <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-200 flex items-center gap-1.5">
@@ -381,7 +669,8 @@
                 <span class="text-[9px] mono-tabular font-bold px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
                     IK LIVE
                 </span>
-                <button onclick="toggleDesktopRightDrawer()" title="Ciutkan / Perluas Telemetri" class="hidden lg:flex w-6 h-6 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-slate-300 items-center justify-center transition">
+                <button class="sheet-close" onclick="setMobileTab('remote')" aria-label="Tutup telemetri">×</button>
+                <button id="collapseRight" onclick="toggleDesktopRightDrawer()" title="Ciutkan / Perluas Telemetri" class="hidden lg:flex w-6 h-6 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-slate-300 items-center justify-center transition">
                     <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="9 18 15 12 9 6"/></svg>
                 </button>
             </div>
@@ -454,29 +743,29 @@
     <!-- 5. ERGONOMIC BOTTOM-CENTER FLOATING GAMEPAD CONTROLLER -->
     <div id="gamepadPillBar" class="fixed bottom-[4.35rem] lg:bottom-3 left-1/2 -translate-x-1/2 z-20 studio-glass rounded-full px-3.5 py-2 flex items-center gap-2.5 sm:gap-4 border border-slate-700/75 shadow-2xl">
         <!-- Tactile 4-Way Movement D-Pad -->
-        <div class="flex items-center gap-1">
-            <button id="btnLeft" data-action="left" title="Strafe Left [A]" class="pad-btn w-10 h-10 rounded-full bg-slate-900/95 border border-slate-700 text-slate-200 flex flex-col items-center justify-center">
+        <div class="movement-pad">
+            <button id="btnLeft" aria-label="Geser kiri" data-action="left" title="Strafe Left [A]" class="pad-btn w-10 h-10 rounded-full bg-slate-900/95 border border-slate-700 text-slate-200 flex flex-col items-center justify-center">
                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
                 <span class="text-[8px] mono-tabular text-slate-400 leading-none">A</span>
             </button>
-            <div class="flex flex-col gap-1">
-                <button id="btnForward" data-action="forward" title="Forward [W]" class="pad-btn w-10 h-10 rounded-full bg-slate-900/95 border border-slate-700 text-slate-200 flex flex-col items-center justify-center">
+            <div class="forward-backward">
+                <button id="btnForward" aria-label="Maju" data-action="forward" title="Forward [W]" class="pad-btn w-10 h-10 rounded-full bg-slate-900/95 border border-slate-700 text-slate-200 flex flex-col items-center justify-center">
                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
                     <span class="text-[8px] mono-tabular text-slate-400 leading-none">W</span>
                 </button>
-                <button id="btnBackward" data-action="backward" title="Backward [S]" class="pad-btn w-10 h-10 rounded-full bg-slate-900/95 border border-slate-700 text-slate-200 flex flex-col items-center justify-center">
+                <button id="btnBackward" aria-label="Mundur" data-action="backward" title="Backward [S]" class="pad-btn w-10 h-10 rounded-full bg-slate-900/95 border border-slate-700 text-slate-200 flex flex-col items-center justify-center">
                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
                     <span class="text-[8px] mono-tabular text-slate-400 leading-none">S</span>
                 </button>
             </div>
-            <button id="btnRight" data-action="right" title="Strafe Right [D]" class="pad-btn w-10 h-10 rounded-full bg-slate-900/95 border border-slate-700 text-slate-200 flex flex-col items-center justify-center">
+            <button id="btnRight" aria-label="Geser kanan" data-action="right" title="Strafe Right [D]" class="pad-btn w-10 h-10 rounded-full bg-slate-900/95 border border-slate-700 text-slate-200 flex flex-col items-center justify-center">
                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
                 <span class="text-[8px] mono-tabular text-slate-400 leading-none">D</span>
             </button>
         </div>
 
         <!-- Center AUTO & STOP Buttons -->
-        <div class="flex flex-col gap-1.5 px-2 border-x border-slate-800/90">
+        <div class="drive-actions">
             <button id="padBtnAuto" onclick="setAutoWalkState(true)" class="px-3 py-1.5 rounded-full text-[10px] mono-tabular font-extrabold bg-emerald-600/25 text-emerald-300 border border-emerald-500/45 hover:bg-emerald-600 hover:text-white transition">
                 AUTO
             </button>
@@ -486,16 +775,16 @@
         </div>
 
         <!-- Right-Side Turn Left [Q], Turn Right [E] & Reset Camera -->
-        <div class="flex items-center gap-1.5">
-            <button id="btnTurnLeft" data-action="turnLeft" title="Turn Left [Q]" class="pad-btn w-10 h-10 rounded-full bg-slate-900/95 border border-slate-700 text-slate-200 flex flex-col items-center justify-center">
+        <div class="rotation-pad">
+            <button id="btnTurnLeft" aria-label="Putar kiri" data-action="turnLeft" title="Turn Left [Q]" class="pad-btn w-10 h-10 rounded-full bg-slate-900/95 border border-slate-700 text-slate-200 flex flex-col items-center justify-center">
                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
                 <span class="text-[8px] mono-tabular text-slate-400 leading-none">Q</span>
             </button>
-            <button id="btnTurnRight" data-action="turnRight" title="Turn Right [E]" class="pad-btn w-10 h-10 rounded-full bg-slate-900/95 border border-slate-700 text-slate-200 flex flex-col items-center justify-center">
+            <button id="btnTurnRight" aria-label="Putar kanan" data-action="turnRight" title="Turn Right [E]" class="pad-btn w-10 h-10 rounded-full bg-slate-900/95 border border-slate-700 text-slate-200 flex flex-col items-center justify-center">
                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
                 <span class="text-[8px] mono-tabular text-slate-400 leading-none">E</span>
             </button>
-            <button onclick="resetCameraView()" title="Reset Camera View [R]" class="pad-btn w-10 h-10 rounded-full bg-slate-900/95 border border-slate-700 text-cyan-300 flex flex-col items-center justify-center">
+            <button id="btnResetCamera" aria-label="Reset kamera" onclick="resetCameraView()" title="Reset Camera View [R]" class="pad-btn w-10 h-10 rounded-full bg-slate-900/95 border border-slate-700 text-cyan-300 flex flex-col items-center justify-center">
                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="3.5"/></svg>
                 <span class="text-[7px] mono-tabular text-slate-400 leading-none">CAM</span>
             </button>
@@ -506,7 +795,7 @@
     <nav id="mobileBottomDock" class="fixed bottom-2 left-2.5 right-2.5 z-30 lg:hidden studio-glass rounded-2xl p-1 grid grid-cols-4 gap-1">
         <button onclick="setMobileTab('remote')" id="mob-tab-remote" class="py-1.5 rounded-xl text-[10px] sm:text-[11px] font-bold bg-red-600 text-white flex flex-col items-center gap-0.5 transition">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="4"/><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><circle cx="15" cy="11" r="1"/><circle cx="18" cy="13" r="1"/></svg>
-            <span>3D + Remote</span>
+            <span>Gerakkan</span>
         </button>
         <button onclick="setMobileTab('controls')" id="mob-tab-controls" class="py-1.5 rounded-xl text-[10px] sm:text-[11px] font-semibold text-slate-300 flex flex-col items-center gap-0.5 transition">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/></svg>
@@ -518,7 +807,7 @@
         </button>
         <button onclick="setMobileTab('full3d')" id="mob-tab-full3d" class="py-1.5 rounded-xl text-[10px] sm:text-[11px] font-semibold text-slate-300 flex flex-col items-center gap-0.5 transition">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-            <span>Full 3D</span>
+            <span>Lihat 3D</span>
         </button>
     </nav>
 
@@ -564,11 +853,12 @@
             let currentGait = 'tripod';        // 'tripod' | 'wave' | 'ripple' | 'dance'
             let currentTerrain = 'flat';       // 'flat' | 'blocks' | 'boulders' | 'ramp'
             let isAutoWalking = false;
-            let show3DLabels = true;
+            let show3DLabels = false;
             let isCleanHud = false;
             let desktopLeftCollapsed = false;
             let desktopRightCollapsed = false;
             let espFlashOn = false;
+            let currentMobileTab = 'remote';
 
             // Body Pose & Gait Parameters
             let targetBodyHeight = DEFAULT_BODY_HEIGHT;
@@ -622,11 +912,11 @@
                 return c3 * (10 + c * (-15 + 6 * c));
             }
 
-            // C2 Bell-Curve Lift: 16 * u^2 * (1 - u)^2 (zero velocity & smooth accel at touchdown)
+            // C2 lift has zero velocity and acceleration at liftoff and touchdown.
             function c2BellLift(u) {
                 const c = THREE.MathUtils.clamp(u, 0, 1);
                 const v = c * (1 - c);
-                return 16 * v * v;
+                return 64 * v * v * v;
             }
 
             // =========================================================================
@@ -729,6 +1019,7 @@
                 const sprite = new THREE.Sprite(material);
                 sprite.scale.set(options.scaleX || 0.72, options.scaleY || 0.23, 1);
                 sprite.renderOrder = 999;
+                sprite.visible = show3DLabels;
                 all3DLabelSprites.push(sprite);
                 return sprite;
             }
@@ -751,15 +1042,15 @@
             function setupThreeScene() {
                 const container = document.getElementById('canvas-container');
                 scene = new THREE.Scene();
-                scene.background = new THREE.Color(0x060913);
-                scene.fog = new THREE.FogExp2(0x060913, 0.019);
+                scene.background = new THREE.Color(0x111d2d);
+                scene.fog = new THREE.FogExp2(0x111d2d, 0.019);
 
-                camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 160);
+                camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 160);
                 camera.position.set(6.4, 5.1, 7.6);
 
                 renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-                renderer.setSize(window.innerWidth, window.innerHeight);
-                renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+                renderer.setSize(container.clientWidth, container.clientHeight);
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
                 renderer.shadowMap.enabled = true;
                 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
                 container.appendChild(renderer.domElement);
@@ -775,7 +1066,7 @@
                     controls.dampingFactor = 0.06;
                     controls.maxPolarAngle = Math.PI / 2 - 0.03;
                     controls.minDistance = 3.2;
-                    controls.maxDistance = 26;
+                    controls.maxDistance = 45;
                     controls.target.set(0, 1.5, 0);
                 } else {
                     // Built-in Spherical Camera Orbit/Zoom/Pan Fallback
@@ -792,8 +1083,7 @@
                 const dirLight = new THREE.DirectionalLight(0xffffff, 1.18);
                 dirLight.position.set(11, 20, 13);
                 dirLight.castShadow = true;
-                dirLight.shadow.mapSize.width = 2048;
-                dirLight.shadow.mapSize.height = 2048;
+                dirLight.shadow.mapSize.setScalar(1024);
                 dirLight.shadow.camera.near = 1;
                 dirLight.shadow.camera.far = 60;
                 const dShadow = 18;
@@ -807,7 +1097,7 @@
                 // Ground Plane & Grid
                 const groundGeo = new THREE.PlaneGeometry(160, 160);
                 const groundMat = new THREE.MeshStandardMaterial({
-                    color: 0x080d1a,
+                    color: 0x111d2d,
                     roughness: 0.85,
                     metalness: 0.15
                 });
@@ -816,7 +1106,7 @@
                 groundMesh.receiveShadow = true;
                 scene.add(groundMesh);
 
-                const gridHelper = new THREE.GridHelper(160, 80, 0xef4444, 0x1e293b);
+                const gridHelper = new THREE.GridHelper(160, 80, 0x54677d, 0x2e4158);
                 gridHelper.position.y = 0.005;
                 gridHelper.material.opacity = 0.34;
                 gridHelper.material.transparent = true;
@@ -840,7 +1130,7 @@
                     spherical: spherical,
                     update: function() {
                         spherical.phi = THREE.MathUtils.clamp(spherical.phi, 0.15, Math.PI / 2 - 0.04);
-                        spherical.radius = THREE.MathUtils.clamp(spherical.radius, 3.2, 26);
+                        spherical.radius = THREE.MathUtils.clamp(spherical.radius, 3.2, 45);
                         offset.setFromSpherical(spherical);
                         camera.position.copy(target).add(offset);
                         camera.lookAt(target);
@@ -872,7 +1162,7 @@
 
             window.resetCameraView = function() {
                 const baseTarget = new THREE.Vector3(hexapodRoot.position.x, 1.5, hexapodRoot.position.z);
-                const offset = new THREE.Vector3(6.4, 3.6, 7.6);
+                const offset = new THREE.Vector3(6.4, 4.8, 7.6).setLength(getCameraFitDistance());
                 camera.position.copy(baseTarget).add(offset);
                 if (controls) {
                     controls.target.copy(baseTarget);
@@ -1418,6 +1708,9 @@
                         homeBodyPos: homeBodyPos,
                         plantedWorldPos: homeBodyPos.clone(),
                         liftoffWorldPos: homeBodyPos.clone(),
+                        landingWorldPos: homeBodyPos.clone(),
+                        previousFootPosition: homeBodyPos.clone(),
+                        previousAngles: { coxa: 0, femur: 0.21, tibia: -1.84 },
                         wasSwinging: false,
                         settlingProgress: 1.0,
                         settleDelay: (i % 2) * 0.12,
@@ -1441,12 +1734,12 @@
                 const coxaAngle = Math.atan2(-localFootVec.z, localFootVec.x);
 
                 // 2. Planar Reach from Femur Pivot to Foot Tip
-                const horizDist = Math.sqrt(localFootVec.x * localFootVec.x + localFootVec.z * localFootVec.z) - L_COXA;
+                const horizDist = Math.hypot(localFootVec.x, localFootVec.z) - L_COXA;
                 const vertDist = localFootVec.y;
 
                 const maxReach = (L_FEMUR + L_TIBIA) * 0.985;
                 const minReach = Math.abs(L_TIBIA - L_FEMUR) + 0.08;
-                let D = Math.sqrt(horizDist * horizDist + vertDist * vertDist);
+                let D = Math.hypot(horizDist, vertDist);
                 D = THREE.MathUtils.clamp(D, minReach, maxReach);
 
                 // 3. Law of Cosines for Femur & Tibia
@@ -1490,11 +1783,14 @@
             // =========================================================================
             window.selectVariant = function(variant) {
                 currentVariant = variant;
-                const isHead = variant.indexOf('head') !== -1;
-                const isEspCam = variant.indexOf('espcam') !== -1;
+                const isHead = variant.includes('head');
+                document.querySelectorAll('[id^=hdr-var-]').forEach(function(button) {
+                    button.setAttribute('aria-pressed', String(button.id === 'hdr-var-' + variant));
+                });
+                const isEspCam = variant.includes('espcam');
 
                 const variantThemes = {
-                    ultrasonic: 0xee3b2b,      // Signature Orange-Red
+                    ultrasonic: 0xd96f55,      // Signature Orange-Red
                     espcam: 0x06b6d4,          // Tactical Cyan
                     ultrasonic_head: 0x10b981, // Emerald Green
                     espcam_head: 0x8b5cf6      // Electric Violet
@@ -1616,7 +1912,7 @@
                         btn.className = 'py-1.5 px-2 rounded-lg text-[11px] font-semibold bg-slate-900/95 text-slate-400 border border-slate-700 transition';
                     }
                 }
-                const deg = parseFloat(degVal) || 0;
+                const deg = Number.parseFloat(degVal) || 0;
                 targetHeadPanRad = THREE.MathUtils.degToRad(deg);
                 const valLabel = document.getElementById('valHeadPan');
                 if (valLabel) valLabel.textContent = deg + '°';
@@ -1626,6 +1922,9 @@
 
             window.selectGait = function(gait) {
                 currentGait = gait;
+                document.querySelectorAll('[id^=gait-]').forEach(function(button) {
+                    button.setAttribute('aria-pressed', String(button.id === 'gait-' + gait));
+                });
                 document.getElementById('gaitBadge').textContent = gait.toUpperCase();
                 ['tripod', 'wave', 'ripple', 'dance'].forEach(function(g) {
                     const btn = document.getElementById('gait-' + g);
@@ -1639,6 +1938,9 @@
 
             window.selectTerrain = function(terrain) {
                 currentTerrain = terrain;
+                document.querySelectorAll('[id^=terrain-]').forEach(function(button) {
+                    button.setAttribute('aria-pressed', String(button.id === 'terrain-' + terrain));
+                });
                 buildTerrain(terrain);
                 const labelsMap = { flat: 'FLAT', blocks: 'BLOCKS', boulders: 'ROCKS', ramp: 'RAMP' };
                 document.getElementById('terrainBadge').textContent = labelsMap[terrain] || 'FLAT';
@@ -1654,6 +1956,8 @@
 
             window.setAutoWalkState = function(active) {
                 isAutoWalking = Boolean(active);
+                document.getElementById('btnAutoWalk').setAttribute('aria-pressed', String(isAutoWalking));
+                document.getElementById('padBtnAuto').setAttribute('aria-pressed', String(isAutoWalking));
                 const btn = document.getElementById('btnAutoWalk');
                 const iconPlay = document.getElementById('iconAutoPlay');
                 const iconStop = document.getElementById('iconAutoStop');
@@ -1685,17 +1989,22 @@
 
             window.stopAllMovement = function() {
                 window.setAutoWalkState(false);
+                releaseControls();
+            };
+
+            function releaseControls() {
                 Object.keys(inputState).forEach(function(k) {
                     inputState[k] = false;
                 });
                 document.querySelectorAll('.pad-btn').forEach(function(b) {
                     b.classList.remove('active-key');
                 });
-            };
+            }
 
             window.toggleLabels = function() {
                 show3DLabels = !show3DLabels;
-                const isHead = currentVariant.indexOf('head') !== -1;
+                document.getElementById('btnToggleLabels').setAttribute('aria-pressed', String(show3DLabels));
+                const isHead = currentVariant.includes('head');
                 all3DLabelSprites.forEach(function(sp) {
                     if (sp === headLabelSprite) {
                         sp.visible = show3DLabels && isHead;
@@ -1726,9 +2035,9 @@
             };
 
             window.updatePoseParam = function() {
-                targetBodyHeight = parseFloat(document.getElementById('sliderHeight').value);
-                targetPitchDeg = parseFloat(document.getElementById('sliderPitch').value);
-                targetRollDeg = parseFloat(document.getElementById('sliderRoll').value);
+                targetBodyHeight = Number.parseFloat(document.getElementById('sliderHeight').value);
+                targetPitchDeg = Number.parseFloat(document.getElementById('sliderPitch').value);
+                targetRollDeg = Number.parseFloat(document.getElementById('sliderRoll').value);
 
                 document.getElementById('valBodyHeight').textContent = targetBodyHeight.toFixed(2) + ' cm';
                 document.getElementById('valPitch').textContent = targetPitchDeg + '°';
@@ -1736,8 +2045,8 @@
             };
 
             window.updateGaitParam = function() {
-                gaitSpeedMult = parseFloat(document.getElementById('sliderSpeed').value);
-                stepHeight = parseFloat(document.getElementById('sliderStepHeight').value);
+                gaitSpeedMult = Number.parseFloat(document.getElementById('sliderSpeed').value);
+                stepHeight = Number.parseFloat(document.getElementById('sliderStepHeight').value);
 
                 document.getElementById('valSpeed').textContent = gaitSpeedMult.toFixed(1) + 'x';
                 document.getElementById('valStepHeight').textContent = stepHeight.toFixed(2) + ' cm';
@@ -1753,129 +2062,52 @@
                 updateGaitParam();
             };
 
-            // Desktop Left & Right Drawer Collapsible Toggles
+            function syncStudioLayout() {
+                Object.assign(document.body.dataset, {
+                    mobileTab: currentMobileTab,
+                    cleanHud: String(isCleanHud),
+                    leftCollapsed: String(desktopLeftCollapsed),
+                    rightCollapsed: String(desktopRightCollapsed)
+                });
+                document.getElementById('btnRestoreHud').classList.toggle('hidden', !isCleanHud);
+                document.getElementById('collapseLeft').setAttribute('aria-expanded', String(!desktopLeftCollapsed));
+                document.getElementById('collapseRight').setAttribute('aria-expanded', String(!desktopRightCollapsed));
+                ['remote', 'controls', 'telemetry', 'full3d'].forEach(function(tab) {
+                    document.getElementById('mob-tab-' + tab).setAttribute('aria-current', tab === currentMobileTab ? 'page' : 'false');
+                });
+            }
+
             window.toggleDesktopLeftDrawer = function() {
                 desktopLeftCollapsed = !desktopLeftCollapsed;
-                const drawer = document.getElementById('leftControlDrawer');
-                const expandBtn = document.getElementById('btnExpandLeft');
-                const fpvWin = document.getElementById('fpvCameraWindow');
-                if (desktopLeftCollapsed) {
-                    drawer.classList.add('lg:hidden');
-                    expandBtn.classList.remove('hidden');
-                    expandBtn.classList.add('lg:flex');
-                    fpvWin.classList.remove('lg:left-[308px]');
-                    fpvWin.classList.add('lg:left-[110px]');
-                } else {
-                    drawer.classList.remove('lg:hidden');
-                    expandBtn.classList.add('hidden');
-                    expandBtn.classList.remove('lg:flex');
-                    fpvWin.classList.remove('lg:left-[110px]');
-                    fpvWin.classList.add('lg:left-[308px]');
-                }
+                syncStudioLayout();
             };
 
             window.toggleDesktopRightDrawer = function() {
                 desktopRightCollapsed = !desktopRightCollapsed;
-                const drawer = document.getElementById('rightTelemetryDrawer');
-                const expandBtn = document.getElementById('btnExpandRight');
-                if (desktopRightCollapsed) {
-                    drawer.classList.add('lg:hidden');
-                    expandBtn.classList.remove('hidden');
-                    expandBtn.classList.add('lg:flex');
-                } else {
-                    drawer.classList.remove('lg:hidden');
-                    expandBtn.classList.add('hidden');
-                    expandBtn.classList.remove('lg:flex');
-                }
+                syncStudioLayout();
             };
 
-            // Clean HUD Mode Toggle (with Floating Restore Pill)
             window.toggleCleanHud = function() {
                 isCleanHud = !isCleanHud;
-                const header = document.getElementById('topHeaderBar');
-                const left = document.getElementById('leftControlDrawer');
-                const right = document.getElementById('rightTelemetryDrawer');
-                const pad = document.getElementById('gamepadPillBar');
-                const dock = document.getElementById('mobileBottomDock');
-                const fpv = document.getElementById('fpvCameraWindow');
-                const restoreBtn = document.getElementById('btnRestoreHud');
-                const expL = document.getElementById('btnExpandLeft');
-                const expR = document.getElementById('btnExpandRight');
-
-                if (isCleanHud) {
-                    header.classList.add('hidden');
-                    left.classList.add('hidden', 'lg:hidden');
-                    right.classList.add('hidden', 'lg:hidden');
-                    pad.classList.add('hidden');
-                    dock.classList.add('hidden');
-                    fpv.classList.add('hidden');
-                    expL.classList.add('hidden', 'lg:hidden');
-                    expR.classList.add('hidden', 'lg:hidden');
-                    restoreBtn.classList.remove('hidden');
-                } else {
-                    restoreBtn.classList.add('hidden');
-                    header.classList.remove('hidden');
-                    dock.classList.remove('hidden');
-                    pad.classList.remove('hidden');
-                    if (!desktopLeftCollapsed) {
-                        left.classList.remove('lg:hidden');
-                    } else {
-                        expL.classList.remove('lg:hidden');
-                    }
-                    if (!desktopRightCollapsed) {
-                        right.classList.remove('lg:hidden');
-                    } else {
-                        expR.classList.remove('lg:hidden');
-                    }
-                    if (currentVariant.indexOf('espcam') !== -1) {
-                        fpv.classList.remove('hidden');
-                    }
-                    window.setMobileTab('remote');
-                }
+                releaseControls();
+                syncStudioLayout();
             };
 
-            // Mobile 4-Tab Navigation Dock Handler (< 1024px)
             window.setMobileTab = function(tabName) {
-                const left = document.getElementById('leftControlDrawer');
-                const right = document.getElementById('rightTelemetryDrawer');
-                const pad = document.getElementById('gamepadPillBar');
-
-                ['remote', 'controls', 'telemetry', 'full3d'].forEach(function(t) {
-                    const btn = document.getElementById('mob-tab-' + t);
-                    if (btn) {
-                        btn.className = t === tabName
-                            ? 'py-1.5 rounded-xl text-[10px] sm:text-[11px] font-bold bg-red-600 text-white flex flex-col items-center gap-0.5 transition'
-                            : 'py-1.5 rounded-xl text-[10px] sm:text-[11px] font-semibold text-slate-300 flex flex-col items-center gap-0.5 transition';
-                    }
-                });
-
-                if (tabName === 'remote') {
-                    left.classList.add('hidden');
-                    right.classList.add('hidden');
-                    pad.classList.remove('hidden');
-                } else if (tabName === 'controls') {
-                    left.classList.remove('hidden');
-                    right.classList.add('hidden');
-                    pad.classList.add('hidden');
-                } else if (tabName === 'telemetry') {
-                    left.classList.add('hidden');
-                    right.classList.remove('hidden');
-                    pad.classList.add('hidden');
-                } else if (tabName === 'full3d') {
-                    left.classList.add('hidden');
-                    right.classList.add('hidden');
-                    pad.classList.add('hidden');
-                }
+                currentMobileTab = tabName;
+                releaseControls();
+                syncStudioLayout();
             };
 
             function setupControls() {
                 const padButtons = document.querySelectorAll('.pad-btn[data-action]');
                 padButtons.forEach(function(btn) {
-                    const action = btn.getAttribute('data-action');
+                    const action = btn.dataset.action;
                     if (!action || !(action in inputState)) return;
 
                     const press = function(e) {
                         if (e && e.cancelable) e.preventDefault();
+                        btn.setPointerCapture(e.pointerId);
                         inputState[action] = true;
                         btn.classList.add('active-key');
                     };
@@ -1887,7 +2119,7 @@
 
                     btn.addEventListener('pointerdown', press);
                     btn.addEventListener('pointerup', release);
-                    btn.addEventListener('pointerleave', release);
+                    btn.addEventListener('lostpointercapture', release);
                     btn.addEventListener('pointercancel', release);
                 });
 
@@ -1905,6 +2137,8 @@
                 };
 
                 window.addEventListener('keydown', function(e) {
+                    if (e.target.matches('input, select, textarea, [contenteditable]')) return;
+                    if (e.code === 'Space' && e.target.closest('button')) return;
                     if (e.code === 'Space') {
                         e.preventDefault();
                         if (!e.repeat) window.toggleAutoWalk();
@@ -1916,6 +2150,7 @@
                     }
                     const mapped = keyMap[e.code];
                     if (mapped) {
+                        e.preventDefault();
                         inputState[mapped.action] = true;
                         const btn = document.getElementById(mapped.btnId);
                         if (btn) btn.classList.add('active-key');
@@ -1969,6 +2204,16 @@
             const clock = new THREE.Clock();
             let lastFpsTime = 0;
             let frameCounter = 0;
+            const SIMULATION_STEP = 1 / 120;
+            let simulationAccumulator = 0;
+            let simulationTime = 0;
+            let simulationTicks = 0;
+            let lastFpvTime = 0;
+            let lastFitDistance = 0;
+            const previousPose = { rootPosition: new THREE.Vector3(), rootYaw: 0, bodyPosition: new THREE.Vector3(), bodyRotation: new THREE.Vector3(), headPan: 0 };
+            const currentPose = { rootPosition: new THREE.Vector3(), rootYaw: 0, bodyPosition: new THREE.Vector3(), bodyRotation: new THREE.Vector3(), headPan: 0 };
+            const renderCameraOffset = new THREE.Vector3();
+            const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
             const desiredVel = new THREE.Vector3();
             const worldStepDelta = new THREE.Vector3();
@@ -1981,13 +2226,7 @@
             const sonarOrigin = new THREE.Vector3();
             const sonarForwardDir = new THREE.Vector3();
 
-            function animate() {
-                requestAnimationFrame(animate);
-
-                const rawDt = clock.getDelta();
-                const dt = Math.min(rawDt, 0.05);
-                const elapsed = clock.getElapsedTime();
-
+            function updateFps(elapsed) {
                 // Update FPS Readout
                 frameCounter++;
                 if (elapsed - lastFpsTime >= 0.4) {
@@ -1999,7 +2238,9 @@
                     frameCounter = 0;
                     lastFpsTime = elapsed;
                 }
+            }
 
+            function updateMovement(dt) {
                 // 1. Critically Damped 2nd-Order Linear & Angular Velocity Smoothing (Zero-Jerk S-Curve)
                 const maxWalkSpeed = 2.40 * gaitSpeedMult;
                 const maxTurnSpeed = 1.25 * gaitSpeedMult;
@@ -2014,7 +2255,7 @@
 
                 const targetTurn = turnInput * maxTurnSpeed;
 
-                const velOmega = 9.5;
+                const velOmega = 8.0;
                 const dampVx = stepCriticallyDamped(currentVel.x, desiredVel.x, currentVelAccel.x, velOmega, dt);
                 const dampVz = stepCriticallyDamped(currentVel.z, desiredVel.z, currentVelAccel.z, velOmega, dt);
                 const dampTurn = stepCriticallyDamped(currentTurnVel, targetTurn, currentTurnAccel, velOmega, dt);
@@ -2048,35 +2289,41 @@
                     fallbackCamState.target.add(camFollowDelta);
                 }
 
-                // 3. Head Servo (S19) Pan Update (Stationary at 0 deg unless Auto Scan or Manual Slider)
-                if (currentVariant.indexOf('head') !== -1) {
-                    if (headAutoScan) {
-                        headScanTime += dt * 1.45;
-                        targetHeadPanRad = Math.sin(headScanTime) * THREE.MathUtils.degToRad(48);
-                        const degNow = Math.round(THREE.MathUtils.radToDeg(targetHeadPanRad));
-                        const slider = document.getElementById('sliderHeadPan');
-                        const valLabel = document.getElementById('valHeadPan');
-                        if (slider) slider.value = degNow;
-                        if (valLabel) valLabel.textContent = degNow + '°';
-                    }
-                    const dampHead = stepCriticallyDamped(currentHeadPanRad, targetHeadPanRad, headPanVel, 18.0, dt);
-                    currentHeadPanRad = dampHead.value;
-                    headPanVel = dampHead.velocity;
-                    headPanGroup.rotation.y = currentHeadPanRad;
+                return { maxWalkSpeed, maxTurnSpeed, linearSpeed, angularSpeed, isMoving };
+            }
 
-                    const headDeg = Math.round(THREE.MathUtils.radToDeg(currentHeadPanRad));
-                    const headTeleDeg = document.getElementById('tele-head-deg');
-                    const headTeleBar = document.getElementById('tele-head-bar');
-                    if (headTeleDeg) headTeleDeg.textContent = headDeg + '°';
-                    if (headTeleBar) {
-                        const pct = THREE.MathUtils.clamp(((headDeg + 65) / 130) * 100, 0, 100);
-                        headTeleBar.style.width = pct + '%';
-                    }
-                } else {
+            function updateHeadReadouts() {
+                if (headAutoScan) {
+                    const degrees = Math.round(THREE.MathUtils.radToDeg(targetHeadPanRad));
+                    document.getElementById('sliderHeadPan').value = degrees;
+                    document.getElementById('valHeadPan').textContent = degrees + '°';
+                }
+                const degrees = Math.round(THREE.MathUtils.radToDeg(currentHeadPanRad));
+                document.getElementById('tele-head-deg').textContent = degrees + '°';
+                const percent = THREE.MathUtils.clamp(((degrees + 65) / 130) * 100, 0, 100);
+                document.getElementById('tele-head-bar').style.width = percent + '%';
+            }
+
+            function updateHeadServo(dt) {
+                if (!currentVariant.includes('head')) {
                     headPanGroup.rotation.y = 0;
                     currentHeadPanRad = 0;
                     headPanVel = 0;
+                    return;
                 }
+                if (headAutoScan) {
+                    headScanTime += dt * 1.45;
+                    targetHeadPanRad = Math.sin(headScanTime) * THREE.MathUtils.degToRad(48);
+                }
+                const dampHead = stepCriticallyDamped(currentHeadPanRad, targetHeadPanRad, headPanVel, 18.0, dt);
+                currentHeadPanRad = dampHead.value;
+                headPanVel = dampHead.velocity;
+                headPanGroup.rotation.y = currentHeadPanRad;
+                if (simulationTicks % 12 === 0) updateHeadReadouts();
+            }
+
+            function updateChassis(dt, elapsed, movement) {
+                const { maxWalkSpeed, maxTurnSpeed, linearSpeed, angularSpeed, isMoving } = movement;
 
                 // 4. Chassis Suspension, Natural Cadence Heave & Turn Banking
                 const dampH = stepCriticallyDamped(currentBodyHeight, targetBodyHeight, bodyHeightVel, 14.0, dt);
@@ -2111,10 +2358,120 @@
                     dynamicPitch += (currentVel.z / maxWalkSpeed) * 0.032;
                 }
 
-                robotBodyGroup.position.set(swayX, supportBaseY + currentBodyHeight + dynamicHeave, swayZ);
-                robotBodyGroup.rotation.set(dynamicPitch, 0, dynamicRoll);
+                const poseBlend = 1 - Math.exp(-12 * dt);
+                robotBodyGroup.position.x = THREE.MathUtils.lerp(robotBodyGroup.position.x, swayX, poseBlend);
+                robotBodyGroup.position.y = THREE.MathUtils.lerp(robotBodyGroup.position.y, supportBaseY + currentBodyHeight + dynamicHeave, poseBlend);
+                robotBodyGroup.position.z = THREE.MathUtils.lerp(robotBodyGroup.position.z, swayZ, poseBlend);
+                robotBodyGroup.rotation.x = THREE.MathUtils.lerp(robotBodyGroup.rotation.x, dynamicPitch, poseBlend);
+                robotBodyGroup.rotation.z = THREE.MathUtils.lerp(robotBodyGroup.rotation.z, dynamicRoll, poseBlend);
                 hexapodRoot.updateMatrixWorld(true);
 
+                return cycleFreq;
+            }
+
+            function settleLeg(leg, dt) {
+                // Gentle staggered lift-and-settle back to neutral home stance when stopping
+                const distFromHome = Math.hypot(
+                    leg.plantedWorldPos.x - tempWorldFoot.x,
+                    leg.plantedWorldPos.z - tempWorldFoot.z
+                );
+
+                if (leg.wasSwinging) {
+                    leg.liftoffWorldPos.copy(leg.plantedWorldPos);
+                    leg.wasSwinging = false;
+                    leg.settlingProgress = 0.0;
+                    leg.settleDelayTimer = 0;
+                } else if (leg.settlingProgress >= 1.0 && distFromHome > 0.05) {
+                    leg.liftoffWorldPos.copy(leg.plantedWorldPos);
+                    leg.settlingProgress = 0.0;
+                    leg.settleDelayTimer = leg.settleDelay;
+                }
+
+                if (leg.settlingProgress < 1.0) {
+                    if (leg.settleDelayTimer > 0) {
+                        leg.settleDelayTimer = Math.max(0, leg.settleDelayTimer - dt);
+                    } else {
+                        leg.settlingProgress = Math.min(1.0, leg.settlingProgress + dt * 3.4);
+                        const su = minimumJerk(leg.settlingProgress);
+                        leg.plantedWorldPos.lerpVectors(leg.liftoffWorldPos, tempWorldFoot, su);
+                        const baseY = THREE.MathUtils.lerp(leg.liftoffWorldPos.y, tempWorldFoot.y, su);
+                        const liftAmp = Math.min(stepHeight * 0.48, distFromHome * 0.55 + 0.14);
+                        leg.plantedWorldPos.y = baseY + c2BellLift(leg.settlingProgress) * liftAmp;
+                    }
+                } else {
+                    leg.plantedWorldPos.y = getTerrainHeightAt(leg.plantedWorldPos.x, leg.plantedWorldPos.z);
+                }
+            }
+
+            function updateFootPlacement(leg, isMoving, isSwinging, legPhase, dutySwing, dt) {
+                if (currentGait === 'dance') {
+                    leg.plantedWorldPos.copy(tempWorldFoot);
+                    leg.wasSwinging = false;
+                    leg.settlingProgress = 1.0;
+                } else if (!isMoving) {
+                    settleLeg(leg, dt);
+                } else if (isSwinging) {
+                    leg.settlingProgress = 1.0;
+                    if (!leg.wasSwinging) {
+                        leg.liftoffWorldPos.copy(leg.plantedWorldPos);
+                        leg.landingWorldPos.copy(tempWorldFoot);
+                        leg.wasSwinging = true;
+                    }
+                    const u = legPhase / dutySwing;
+                    const smoothU = minimumJerk(u);
+
+                    leg.plantedWorldPos.lerpVectors(leg.liftoffWorldPos, leg.landingWorldPos, smoothU);
+                    const baseGroundY = THREE.MathUtils.lerp(leg.liftoffWorldPos.y, leg.landingWorldPos.y, smoothU);
+                    leg.plantedWorldPos.y = baseGroundY + c2BellLift(u) * stepHeight;
+                } else {
+                    // Stance Phase: Foot remains firmly planted on world terrain
+                    leg.settlingProgress = 1.0;
+                    if (leg.wasSwinging) {
+                        leg.plantedWorldPos.copy(leg.landingWorldPos);
+                        leg.wasSwinging = false;
+                    }
+                    leg.plantedWorldPos.y = getTerrainHeightAt(leg.plantedWorldPos.x, leg.plantedWorldPos.z);
+                }
+            }
+
+            function updateLegTelemetry(i, angles, footInAir) {
+                const cDeg = Math.round(THREE.MathUtils.radToDeg(angles.coxa));
+                const fDeg = Math.round(THREE.MathUtils.radToDeg(angles.femur));
+                const tDeg = Math.round(THREE.MathUtils.radToDeg(angles.tibia));
+
+                const elC = document.getElementById('deg-coxa-' + i);
+                const elF = document.getElementById('deg-femur-' + i);
+                const elT = document.getElementById('deg-tibia-' + i);
+                if (elC) elC.textContent = cDeg + '°';
+                if (elF) elF.textContent = fDeg + '°';
+                if (elT) elT.textContent = tDeg + '°';
+
+                const barC = document.getElementById('bar-coxa-' + i);
+                const barF = document.getElementById('bar-femur-' + i);
+                const barT = document.getElementById('bar-tibia-' + i);
+                if (barC) barC.style.width = THREE.MathUtils.clamp(((cDeg + 60) / 120) * 100, 5, 95) + '%';
+                if (barF) barF.style.width = THREE.MathUtils.clamp(((fDeg + 45) / 110) * 100, 5, 95) + '%';
+                if (barT) barT.style.width = THREE.MathUtils.clamp(((tDeg + 150) / 150) * 100, 5, 95) + '%';
+
+                const phaseEl = document.getElementById('leg-phase-' + i);
+                if (phaseEl) {
+                    if (footInAir) {
+                        phaseEl.textContent = 'SWING';
+                        phaseEl.className = 'text-[9px] mono-tabular font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40';
+                    } else {
+                        phaseEl.textContent = 'STANCE';
+                        phaseEl.className = 'text-[9px] mono-tabular font-bold px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30';
+                    }
+                }
+            }
+
+            function isLegSwinging(leg, isMoving, phase, duty, frequency, dt) {
+                if (!isMoving || currentGait === 'dance' || phase >= duty) return false;
+                // Starting partway through a swing would skip the beginning of its trajectory.
+                return leg.wasSwinging || phase <= frequency * dt * 1.5;
+            }
+
+            function updateLegs(dt, elapsed, isMoving, cycleFreq) {
                 // 5. Update All 6 Legs with Exact Circular-Arc Turning Stride & C2 Swing Trajectories
                 const dutySwing = getSwingDutyRatio();
                 const stanceDuration = (1.0 - dutySwing) / Math.max(0.25, cycleFreq);
@@ -2145,65 +2502,9 @@
                     tempWorldFoot.copy(tempBodyFoot).applyAxisAngle(upAxis, hexapodRoot.rotation.y).add(hexapodRoot.position);
                     tempWorldFoot.y = getTerrainHeightAt(tempWorldFoot.x, tempWorldFoot.z);
 
-                    const isSwinging = isMoving && currentGait !== 'dance' && (legPhase < dutySwing);
+                    const isSwinging = isLegSwinging(leg, isMoving, legPhase, dutySwing, cycleFreq, dt);
 
-                    if (currentGait === 'dance') {
-                        leg.plantedWorldPos.copy(tempWorldFoot);
-                        leg.wasSwinging = false;
-                        leg.settlingProgress = 1.0;
-                    } else if (!isMoving) {
-                        // Gentle staggered lift-and-settle back to neutral home stance when stopping
-                        const distFromHome = Math.hypot(
-                            leg.plantedWorldPos.x - tempWorldFoot.x,
-                            leg.plantedWorldPos.z - tempWorldFoot.z
-                        );
-
-                        if (leg.wasSwinging) {
-                            leg.liftoffWorldPos.copy(leg.plantedWorldPos);
-                            leg.wasSwinging = false;
-                            leg.settlingProgress = 0.0;
-                            leg.settleDelayTimer = 0;
-                        } else if (leg.settlingProgress >= 1.0 && distFromHome > 0.05) {
-                            leg.liftoffWorldPos.copy(leg.plantedWorldPos);
-                            leg.settlingProgress = 0.0;
-                            leg.settleDelayTimer = leg.settleDelay;
-                        }
-
-                        if (leg.settlingProgress < 1.0) {
-                            if (leg.settleDelayTimer > 0) {
-                                leg.settleDelayTimer = Math.max(0, leg.settleDelayTimer - dt);
-                            } else {
-                                leg.settlingProgress = Math.min(1.0, leg.settlingProgress + dt * 3.4);
-                                const su = minimumJerk(leg.settlingProgress);
-                                leg.plantedWorldPos.lerpVectors(leg.liftoffWorldPos, tempWorldFoot, su);
-                                const baseY = THREE.MathUtils.lerp(leg.liftoffWorldPos.y, tempWorldFoot.y, su);
-                                const liftAmp = Math.min(stepHeight * 0.48, distFromHome * 0.55 + 0.14);
-                                leg.plantedWorldPos.y = baseY + c2BellLift(leg.settlingProgress) * liftAmp;
-                            }
-                        } else {
-                            leg.plantedWorldPos.y = getTerrainHeightAt(leg.plantedWorldPos.x, leg.plantedWorldPos.z);
-                        }
-                    } else if (isSwinging) {
-                        leg.settlingProgress = 1.0;
-                        if (!leg.wasSwinging) {
-                            leg.liftoffWorldPos.copy(leg.plantedWorldPos);
-                            leg.wasSwinging = true;
-                        }
-                        const u = legPhase / dutySwing;
-                        const smoothU = minimumJerk(u);
-
-                        leg.plantedWorldPos.lerpVectors(leg.liftoffWorldPos, tempWorldFoot, smoothU);
-                        const baseGroundY = THREE.MathUtils.lerp(leg.liftoffWorldPos.y, tempWorldFoot.y, smoothU);
-                        leg.plantedWorldPos.y = baseGroundY + c2BellLift(u) * stepHeight;
-                    } else {
-                        // Stance Phase: Foot remains firmly planted on world terrain
-                        leg.settlingProgress = 1.0;
-                        if (leg.wasSwinging) {
-                            leg.plantedWorldPos.copy(tempWorldFoot);
-                            leg.wasSwinging = false;
-                        }
-                        leg.plantedWorldPos.y = getTerrainHeightAt(leg.plantedWorldPos.x, leg.plantedWorldPos.z);
-                    }
+                    updateFootPlacement(leg, isMoving, isSwinging, legPhase, dutySwing, dt);
 
                     const footInAir = isSwinging || (!isMoving && leg.settlingProgress < 0.94);
                     if (!footInAir) {
@@ -2214,42 +2515,14 @@
                     // Ground Contact Ring Indicator
                     leg.rippleRing.position.set(leg.plantedWorldPos.x, leg.plantedWorldPos.y + 0.015, leg.plantedWorldPos.z);
                     leg.rippleRing.visible = !footInAir;
-                    const pulseScale = 0.85 + Math.sin(elapsed * 6 + i) * 0.12;
+                    const pulseScale = reducedMotion.matches ? 0.85 : 0.85 + Math.sin(elapsed * 6 + i) * 0.12;
                     leg.rippleRing.scale.set(pulseScale, pulseScale, 1);
 
                     // Solve 3-DOF Analytical Inverse Kinematics
                     const angles = solveLegIK(leg, leg.plantedWorldPos, dt);
 
-                    // Update Telemetry Cards (every 2 frames)
-                    if (frameCounter % 2 === 0) {
-                        const cDeg = Math.round(THREE.MathUtils.radToDeg(angles.coxa));
-                        const fDeg = Math.round(THREE.MathUtils.radToDeg(angles.femur));
-                        const tDeg = Math.round(THREE.MathUtils.radToDeg(angles.tibia));
-
-                        const elC = document.getElementById('deg-coxa-' + i);
-                        const elF = document.getElementById('deg-femur-' + i);
-                        const elT = document.getElementById('deg-tibia-' + i);
-                        if (elC) elC.textContent = cDeg + '°';
-                        if (elF) elF.textContent = fDeg + '°';
-                        if (elT) elT.textContent = tDeg + '°';
-
-                        const barC = document.getElementById('bar-coxa-' + i);
-                        const barF = document.getElementById('bar-femur-' + i);
-                        const barT = document.getElementById('bar-tibia-' + i);
-                        if (barC) barC.style.width = THREE.MathUtils.clamp(((cDeg + 60) / 120) * 100, 5, 95) + '%';
-                        if (barF) barF.style.width = THREE.MathUtils.clamp(((fDeg + 45) / 110) * 100, 5, 95) + '%';
-                        if (barT) barT.style.width = THREE.MathUtils.clamp(((tDeg + 150) / 150) * 100, 5, 95) + '%';
-
-                        const phaseEl = document.getElementById('leg-phase-' + i);
-                        if (phaseEl) {
-                            if (footInAir) {
-                                phaseEl.textContent = 'SWING';
-                                phaseEl.className = 'text-[9px] mono-tabular font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40';
-                            } else {
-                                phaseEl.textContent = 'STANCE';
-                                phaseEl.className = 'text-[9px] mono-tabular font-bold px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30';
-                            }
-                        }
+                    if (simulationTicks % 12 === 0) {
+                        updateLegTelemetry(i, angles, footInAir);
                     }
                 }
 
@@ -2257,15 +2530,17 @@
                     const targetAvgGround = plantedHeightSum / plantedFootCount;
                     avgGroundSupportY += (targetAvgGround - avgGroundSupportY) * (1 - Math.exp(-8 * dt));
                 }
+            }
 
+            function updateSonar(elapsed) {
                 // 6. Ultrasonic Sonar Waves & Live Distance Readout
-                if (currentVariant.indexOf('espcam') === -1) {
-                    const waveProgress = (elapsed * 1.4) % 1.0;
+                if (!currentVariant.includes('espcam')) {
+                    const waveProgress = reducedMotion.matches ? 0.35 : (elapsed * 1.4) % 1.0;
                     sonarWaveRing.position.z = -0.25 - waveProgress * 1.25;
                     sonarWaveRing.scale.setScalar(0.8 + waveProgress * 1.8);
                     sonarWaveRing.material.opacity = (1 - waveProgress) * 0.7;
 
-                    const waveProgress2 = (elapsed * 1.4 + 0.5) % 1.0;
+                    const waveProgress2 = reducedMotion.matches ? 0.75 : (elapsed * 1.4 + 0.5) % 1.0;
                     sonarWaveRing2.position.z = -0.25 - waveProgress2 * 1.25;
                     sonarWaveRing2.scale.setScalar(0.8 + waveProgress2 * 1.8);
                     sonarWaveRing2.material.opacity = (1 - waveProgress2) * 0.7;
@@ -2281,7 +2556,9 @@
                     const statusText = document.getElementById('sensorStatusText');
                     if (statusText) statusText.textContent = distCm + ' cm';
                 }
+            }
 
+            function renderViews(elapsed) {
                 // Update Camera Controls & Main Renderer
                 if (controls) {
                     controls.update();
@@ -2291,7 +2568,8 @@
                 renderer.render(scene, camera);
 
                 // Render Live FPV Camera Feed for ESP32-CAM Variants
-                if (currentVariant.indexOf('espcam') !== -1) {
+                if (currentVariant.includes('espcam') && elapsed - lastFpvTime >= 1 / 30) {
+                    lastFpvTime = elapsed;
                     fpvRenderer.render(scene, espCamCamera);
                     const hdgDeg = Math.round(((THREE.MathUtils.radToDeg(-hexapodRoot.rotation.y - headPanGroup.rotation.y) % 360) + 360) % 360);
                     const hdgStr = String(hdgDeg).padStart(3, '0');
@@ -2300,23 +2578,153 @@
                 }
             }
 
+            function capturePose(pose) {
+                pose.rootPosition.copy(hexapodRoot.position);
+                pose.rootYaw = hexapodRoot.rotation.y;
+                pose.bodyPosition.copy(robotBodyGroup.position);
+                pose.bodyRotation.copy(robotBodyGroup.rotation);
+                pose.headPan = headPanGroup.rotation.y;
+            }
+
+            function capturePreviousPose() {
+                capturePose(previousPose);
+                for (const leg of legs) {
+                    Object.assign(leg.previousAngles, leg.currentAngles);
+                    leg.previousFootPosition.copy(leg.plantedWorldPos);
+                }
+            }
+
+            function applyRenderPose(alpha) {
+                hexapodRoot.position.lerpVectors(previousPose.rootPosition, currentPose.rootPosition, alpha);
+                hexapodRoot.rotation.y = THREE.MathUtils.lerp(previousPose.rootYaw, currentPose.rootYaw, alpha);
+                robotBodyGroup.position.lerpVectors(previousPose.bodyPosition, currentPose.bodyPosition, alpha);
+                robotBodyGroup.rotation.set(
+                    THREE.MathUtils.lerp(previousPose.bodyRotation.x, currentPose.bodyRotation.x, alpha),
+                    THREE.MathUtils.lerp(previousPose.bodyRotation.y, currentPose.bodyRotation.y, alpha),
+                    THREE.MathUtils.lerp(previousPose.bodyRotation.z, currentPose.bodyRotation.z, alpha)
+                );
+                headPanGroup.rotation.y = THREE.MathUtils.lerp(previousPose.headPan, currentPose.headPan, alpha);
+                for (const leg of legs) {
+                    leg.coxaGroup.rotation.y = THREE.MathUtils.lerp(leg.previousAngles.coxa, leg.currentAngles.coxa, alpha);
+                    leg.femurGroup.rotation.z = THREE.MathUtils.lerp(leg.previousAngles.femur, leg.currentAngles.femur, alpha);
+                    leg.tibiaGroup.rotation.z = THREE.MathUtils.lerp(leg.previousAngles.tibia, leg.currentAngles.tibia, alpha);
+                    leg.rippleRing.position.lerpVectors(leg.previousFootPosition, leg.plantedWorldPos, alpha);
+                    leg.rippleRing.position.y += 0.015;
+                }
+            }
+
+            function renderInterpolatedViews() {
+                capturePose(currentPose);
+                const alpha = THREE.MathUtils.clamp(simulationAccumulator / SIMULATION_STEP, 0, 1);
+                const elapsed = Math.max(0, simulationTime - SIMULATION_STEP + simulationAccumulator);
+                applyRenderPose(alpha);
+                renderCameraOffset.subVectors(hexapodRoot.position, currentPose.rootPosition);
+                const cameraTarget = controls ? controls.target : fallbackCamState.target;
+                camera.position.add(renderCameraOffset);
+                cameraTarget.add(renderCameraOffset);
+                try {
+                    updateSonar(elapsed);
+                    renderViews(elapsed);
+                } finally {
+                    // Rendering must leave the authoritative simulation pose intact.
+                    camera.position.sub(renderCameraOffset);
+                    cameraTarget.sub(renderCameraOffset);
+                    applyRenderPose(1);
+                    hexapodRoot.updateMatrixWorld(true);
+                }
+            }
+
+            function advanceSimulation(frameDt) {
+                // Bound catch-up after tab suspension, while keeping solver steps constant.
+                simulationAccumulator += Math.min(frameDt, 0.05);
+                while (simulationAccumulator + 1e-10 >= SIMULATION_STEP) {
+                    capturePreviousPose();
+                    simulationTime += SIMULATION_STEP;
+                    simulationTicks++;
+                    const movement = updateMovement(SIMULATION_STEP);
+                    updateHeadServo(SIMULATION_STEP);
+                    const cycleFreq = updateChassis(SIMULATION_STEP, simulationTime, movement);
+                    updateLegs(SIMULATION_STEP, simulationTime, movement.isMoving, cycleFreq);
+                    simulationAccumulator -= SIMULATION_STEP;
+                }
+            }
+
+            function animate() {
+                requestAnimationFrame(animate);
+                if (document.hidden) {
+                    clock.getDelta();
+                    return;
+                }
+                const frameDt = clock.getDelta();
+                advanceSimulation(frameDt);
+                updateFps(simulationTime);
+                renderInterpolatedViews();
+            }
+
+            function resizeViewport() {
+                const container = document.getElementById('canvas-container');
+                const width = Math.max(1, container.clientWidth);
+                const height = Math.max(1, container.clientHeight);
+                camera.aspect = width / height;
+                camera.updateProjectionMatrix();
+                renderer.setSize(width, height);
+                if (window.matchMedia('(min-width: 1024px)').matches) {
+                    camera.setViewOffset(width, height, 0, 44, width, height);
+                } else {
+                    camera.clearViewOffset();
+                }
+
+                const fitDistance = getCameraFitDistance();
+                const target = controls ? controls.target : fallbackCamState.target;
+                const offset = camera.position.clone().sub(target);
+                offset.multiplyScalar(lastFitDistance ? fitDistance / lastFitDistance : fitDistance / offset.length());
+                camera.position.copy(target).add(offset);
+                if (fallbackCamState) fallbackCamState.spherical.setFromVector3(offset);
+                lastFitDistance = fitDistance;
+            }
+
+            function getCameraFitDistance() {
+                const halfFov = THREE.MathUtils.degToRad(camera.fov / 2);
+                const limitingFov = Math.atan(Math.tan(halfFov) * Math.min(camera.aspect, 1));
+                const viewRadius = window.matchMedia('(min-width: 1024px)').matches ? 4.4 : 5.2;
+                return Math.min(38, viewRadius / Math.sin(limitingFov));
+            }
+
+            function setupResponsiveLayout() {
+                const header = document.getElementById('topHeaderBar');
+                const headerObserver = new ResizeObserver(function() {
+                    const bottom = header.getBoundingClientRect().bottom + 12;
+                    document.documentElement.style.setProperty('--header-bottom', bottom + 'px');
+                });
+                headerObserver.observe(header);
+                const viewportObserver = new ResizeObserver(resizeViewport);
+                viewportObserver.observe(document.getElementById('canvas-container'));
+                document.addEventListener('visibilitychange', function() {
+                    window.stopAllMovement();
+                    simulationAccumulator = 0;
+                    capturePreviousPose();
+                    clock.getDelta();
+                });
+                resizeViewport();
+            }
+
             // =========================================================================
             // 13. INITIALIZATION & WINDOW RESIZE HANDLER
             // =========================================================================
             function initStudio() {
                 try {
+                    syncStudioLayout();
                     initTelemetryUI();
                     setupThreeScene();
                     buildHexapodModel();
                     setupControls();
                     window.selectVariant('ultrasonic');
-
-                    window.addEventListener('resize', function() {
-                        if (!camera || !renderer) return;
-                        camera.aspect = window.innerWidth / window.innerHeight;
-                        camera.updateProjectionMatrix();
-                        renderer.setSize(window.innerWidth, window.innerHeight);
-                    });
+                    window.selectGait('tripod');
+                    window.selectTerrain('flat');
+                    window.setAutoWalkState(false);
+                    document.getElementById('btnToggleLabels').setAttribute('aria-pressed', 'false');
+                    setupResponsiveLayout();
+                    capturePreviousPose();
 
                     animate();
                 } catch (err) {
